@@ -6,8 +6,11 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.events.EventFiringWebDriver;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,17 +23,16 @@ public abstract class CbTest {
 
     public WebDriver createWebDriverBasedOnCbCapabilities() throws Exception {
         String browserName = System.getProperty("browserName");
-        if ("chrome".equalsIgnoreCase(browserName)) {
-            String path = System.getProperty("user.dir");
-            System.setProperty("webdriver.chrome.driver", path + "\\resources\\chromedriver.exe");
-            return new ChromeDriver();
-        } else if("firefox".equalsIgnoreCase(browserName)){
-            return new FirefoxDriver();
+        DesiredCapabilities capabilities = null;
+        if("firefox".equalsIgnoreCase(browserName)){
+            capabilities = DesiredCapabilities.firefox();
         } else if ("ie".equalsIgnoreCase(browserName)) {
-            return new InternetExplorerDriver();
+            capabilities = DesiredCapabilities.internetExplorer();
+        } else {
+            capabilities = DesiredCapabilities.chrome();
         }
 
-        throw new Exception("Invalid browserName: " + browserName);
+        return new RemoteWebDriver(new URL("http://localhost:4444/wd/hub"), capabilities);
     }
 
     public void setWebDriver(WebDriver driver) {
