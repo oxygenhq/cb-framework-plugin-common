@@ -6,6 +6,9 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.events.WebDriverEventListener;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 public class CbEventHandler implements WebDriverEventListener {
 
     private CbTest currentTest;
@@ -125,7 +128,10 @@ public class CbEventHandler implements WebDriverEventListener {
     }
 
     @Override
-    public void onException(Throwable throwable, WebDriver webDriver) { currentTest.failCurrentStep(); }
+    public void onException(Throwable throwable, WebDriver webDriver) {
+        FailureModel failureModel = new FailureModel(throwable);
+        currentTest.failCurrentStep(failureModel);
+    }
 
     @Override
     public <X> void beforeGetScreenshotAs(OutputType<X> outputType) {

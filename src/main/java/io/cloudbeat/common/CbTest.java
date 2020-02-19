@@ -45,7 +45,7 @@ public abstract class CbTest {
 
     public abstract String getCurrentTestName();
 
-    public void failCurrentStep() {endStepInner(currentStepName, getCurrentTestName(), false);}
+    public void failCurrentStep(FailureModel failureModel) {endStepInner(currentStepName, getCurrentTestName(), false, failureModel);}
 
     public void startStep(String name) {
         System.out.println("Start step with name:" + name);
@@ -76,10 +76,10 @@ public abstract class CbTest {
     }
 
     public void endStep(String name) {
-        endStepInner(name, getCurrentTestName(), true);
+        endStepInner(name, getCurrentTestName(), true, null);
     }
 
-    private void endStepInner(String name, String testName, boolean isSuccess) {
+    private void endStepInner(String name, String testName, boolean isSuccess, FailureModel failureModel) {
         System.out.println("End step with name:" + name + " with is success:" + isSuccess);
         if (!_steps.containsKey(testName)) {
             return;
@@ -101,19 +101,20 @@ public abstract class CbTest {
             }
         }
 
-        finishStep(currentStep, isSuccess);
+        finishStep(currentStep, isSuccess, failureModel);
 
 
         while (currentStep != null) {
-            finishStep(currentStep, isSuccess);
+            finishStep(currentStep, isSuccess, failureModel);
             steps = currentStep.steps;
             currentStep = getFirstNotFinishedStep(steps);
         }
     }
 
-    private void finishStep(StepModel currentStep, boolean isSuccess) {
+    private void finishStep(StepModel currentStep, boolean isSuccess, FailureModel failureModel) {
         currentStep.status = isSuccess ? ResultStatus.Passed : ResultStatus.Failed;
         currentStep.isFinished = true;
+        currentStep.failure = failureModel;
         currentStep.duration = (new Date().toInstant().toEpochMilli() - currentStep.startTime.toInstant().toEpochMilli());
         if(!isSuccess && driver != null && driver instanceof TakesScreenshot) {
             currentStep.screenShot = ((TakesScreenshot)driver).getScreenshotAs(OutputType.BASE64);
@@ -127,13 +128,13 @@ public abstract class CbTest {
                 .orElse(null);
     }
 
-    public ArrayList<StepModel> getStepsForMethod(String methodName, boolean isSuccess) {
+    public ArrayList<StepModel> getStepsForMethod(String methodName, boolean isSuccess, FailureModel failureModel) {
         if (_steps.containsKey(methodName))
         {
             ArrayList<StepModel> steps = _steps.get(methodName);
             ArrayList<StepModel> notEndedSteps = new ArrayList<>(steps.stream().filter((stepModel -> !stepModel.isFinished)).collect(Collectors.toList()));
             for (StepModel step : notEndedSteps) {
-                endStepInner(step.name, methodName, isSuccess);
+                endStepInner(step.name, methodName, isSuccess, failureModel);
             }
 
             return _steps.get(methodName);
