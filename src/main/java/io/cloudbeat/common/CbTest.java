@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 public abstract class CbTest {
     private Map<String, ArrayList<StepModel>> _steps = new HashMap<>();
     public WebDriver driver;
+    private String currentStepName;
 
     public WebDriver createWebDriverBasedOnCbCapabilities() throws Exception {
         String browserName = System.getProperty("browserName");
@@ -44,7 +45,11 @@ public abstract class CbTest {
 
     public abstract String getCurrentTestName();
 
+    public void failCurrentStep() {endStepInner(currentStepName, getCurrentTestName(), false);}
+
     public void startStep(String name) {
+        System.out.println("Start step with name:" + name);
+        currentStepName = name;
         StepModel newStep = new StepModel();
         newStep.name = name;
         newStep.steps = new ArrayList<>();
@@ -75,6 +80,7 @@ public abstract class CbTest {
     }
 
     private void endStepInner(String name, String testName, boolean isSuccess) {
+        System.out.println("End step with name:" + name + " with is success:" + isSuccess);
         if (!_steps.containsKey(testName)) {
             return;
         }
@@ -130,7 +136,6 @@ public abstract class CbTest {
                 endStepInner(step.name, methodName, isSuccess);
             }
 
-            System.out.println(_steps.get(methodName).size());
             return _steps.get(methodName);
         }
 

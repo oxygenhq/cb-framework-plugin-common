@@ -125,9 +125,7 @@ public class CbEventHandler implements WebDriverEventListener {
     }
 
     @Override
-    public void onException(Throwable throwable, WebDriver webDriver) {
-
-    }
+    public void onException(Throwable throwable, WebDriver webDriver) { currentTest.failCurrentStep(); }
 
     @Override
     public <X> void beforeGetScreenshotAs(OutputType<X> outputType) {
