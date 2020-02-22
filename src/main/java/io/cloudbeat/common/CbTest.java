@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public abstract class CbTest {
@@ -41,6 +42,7 @@ public abstract class CbTest {
         CbEventHandler handler = new CbEventHandler(this);
         eventDriver.register(handler);
         this.driver = eventDriver;
+        this.driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
     }
 
     public abstract String getCurrentTestName();
