@@ -101,8 +101,7 @@ public class CbEventHandler implements WebDriverEventListener {
 
     @Override
     public void afterClickOn(final WebElement webElement, final WebDriver webDriver) {
-        final String elmName = this.getElementDisplayName(webElement);
-        currentTest.endStep(String.format("Click on %s", elmName));
+        currentTest.endStep(currentTest.currentStepName);
     }
 
     @Override

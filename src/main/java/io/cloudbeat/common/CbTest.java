@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public abstract class CbTest {
     private Map<String, ArrayList<StepModel>> _steps = new HashMap<>();
     public WebDriver driver;
-    private String currentStepName;
+    public String currentStepName;
 
     public WebDriver createWebDriverBasedOnCbCapabilities() throws Exception {
         String browserName = System.getProperty("browserName");
