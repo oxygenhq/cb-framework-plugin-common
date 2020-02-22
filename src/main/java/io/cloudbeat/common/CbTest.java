@@ -50,15 +50,17 @@ public abstract class CbTest {
     public void failCurrentStep(FailureModel failureModel) {endStepInner(currentStepName, getCurrentTestName(), false, failureModel);}
 
     public void startStep(String name) {
-        System.out.println("Start step with name:" + name);
+        startStepInner(name, getCurrentTestName());
+    }
+
+    private void startStepInner(String name, String testName) {
+        System.out.println("Start step with name:" + name + " for method" + testName);
         currentStepName = name;
         StepModel newStep = new StepModel();
         newStep.name = name;
         newStep.steps = new ArrayList<>();
         newStep.startTime = new Date();
         newStep.isFinished = false;
-
-        String testName = getCurrentTestName();
         if (_steps.containsKey(testName)) {
             ArrayList<StepModel> steps = _steps.get(testName);
             StepModel currentStep = getFirstNotFinishedStep(steps);
@@ -82,7 +84,7 @@ public abstract class CbTest {
     }
 
     private void endStepInner(String name, String testName, boolean isSuccess, FailureModel failureModel) {
-        System.out.println("End step with name:" + name + " with is success:" + isSuccess);
+        System.out.println("End step with name:" + name + " with is success:" + isSuccess + " for method" + testName);
         if (!_steps.containsKey(testName)) {
             return;
         }
@@ -135,8 +137,15 @@ public abstract class CbTest {
         {
             ArrayList<StepModel> steps = _steps.get(methodName);
             ArrayList<StepModel> notEndedSteps = new ArrayList<>(steps.stream().filter((stepModel -> !stepModel.isFinished)).collect(Collectors.toList()));
-            for (StepModel step : notEndedSteps) {
-                endStepInner(step.name, methodName, isSuccess, failureModel);
+            Boolean isAnyFailSteps = steps.stream().anyMatch(stepModel -> stepModel.status == ResultStatus.Failed);
+            
+            if (notEndedSteps.isEmpty() && !isSuccess && !isAnyFailSteps) {
+                startStepInner("Assertion", methodName);
+                endStepInner("Assertion", methodName, false, failureModel);
+            } else {
+                for (StepModel step : notEndedSteps) {
+                    endStepInner(step.name, methodName, isSuccess, failureModel);
+                }
             }
 
             return _steps.get(methodName);
