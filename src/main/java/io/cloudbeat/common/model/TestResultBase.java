@@ -1,6 +1,7 @@
-package io.cloudbeat.common;
+package io.cloudbeat.common.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.cloudbeat.common.model.ResultStatus;
 import io.cloudbeat.common.serializers.DateSerializer;
 
 import java.util.Date;

@@ -1,6 +1,7 @@
-package io.cloudbeat.common;
+package io.cloudbeat.common.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.cloudbeat.common.model.extra.ExtraModel;
 
 import java.util.ArrayList;
 import java.util.Dictionary;
@@ -13,4 +14,5 @@ public class StepModel extends TestResultBase {
     public String screenShot;
     public ArrayList<StepModel> steps;
     public boolean isFinished;
+    public ExtraModel extra;
 }

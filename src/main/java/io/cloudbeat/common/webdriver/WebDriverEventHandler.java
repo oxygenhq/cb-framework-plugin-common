@@ -1,21 +1,21 @@
-package io.cloudbeat.common;
+package io.cloudbeat.common.webdriver;
 
+import io.cloudbeat.common.CloudBeatTest;
+import io.cloudbeat.common.model.FailureModel;
 import org.openqa.selenium.By;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.events.WebDriverEventListener;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Hashtable;
 
-public class CbEventHandler implements WebDriverEventListener {
+public class WebDriverEventHandler implements WebDriverEventListener {
 
-    private CbTest currentTest;
+    private CloudBeatTest currentTest;
     private final Hashtable<Integer, String> elementHash = new Hashtable();
 
-    public CbEventHandler(CbTest test)
+    public WebDriverEventHandler(CloudBeatTest test)
     {
         currentTest = test;
     }
@@ -101,7 +101,7 @@ public class CbEventHandler implements WebDriverEventListener {
 
     @Override
     public void afterClickOn(final WebElement webElement, final WebDriver webDriver) {
-        currentTest.endStep(currentTest.currentStepName);
+        currentTest.endStep(currentTest.getCurrentStepName());
     }
 
     @Override
@@ -146,7 +146,7 @@ public class CbEventHandler implements WebDriverEventListener {
 
     @Override
     public void onException(final Throwable throwable, final WebDriver webDriver) {
-        final FailureModel failureModel = new FailureModel(throwable);
+        final FailureModel failureModel = new FailureModel(throwable, this.currentTest.getCurrentTestPackageName());
         currentTest.failCurrentStep(failureModel);
     }
 

@@ -1,0 +1,45 @@
+package io.cloudbeat.common.model;
+
+import io.cloudbeat.common.Helper;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+public class FailureModel {
+    public final static String FAILURE_TYPE = "JAVA_ERROR";
+    public FailureModel() {}
+
+    public FailureModel(String message) {
+        type = FAILURE_TYPE;
+        this.message = message;
+    }
+
+    public FailureModel(Throwable throwable) {
+        this(throwable, null);
+    }
+
+    public FailureModel(Throwable throwable, String testPackageName) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        throwable.printStackTrace(pw);
+        String stackTrace = sw.toString();
+        StackTraceElement[] filteredStackTrace =
+                Helper.getStackTraceStartingFromPackage(throwable.getStackTrace(), testPackageName);
+        this.subtype = throwable.getClass().getSimpleName();
+        this.type = FAILURE_TYPE;
+        this.data = stackTrace;
+        this.stacktrace = Helper.stackTraceToStringArray(filteredStackTrace);
+        this.message = throwable.getMessage();
+        // set location attribute
+        if (filteredStackTrace.length > 0) {
+            this.location = filteredStackTrace[0].toString();
+        }
+    }
+
+    public String type;
+    public String subtype;
+    public String data;
+    public String[] stacktrace;
+    public String message;
+    public String location;
+}

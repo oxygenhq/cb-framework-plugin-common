@@ -1,4 +1,4 @@
-package io.cloudbeat.common;
+package io.cloudbeat.common.model;
 
 public enum ResultStatus {
     Passed,

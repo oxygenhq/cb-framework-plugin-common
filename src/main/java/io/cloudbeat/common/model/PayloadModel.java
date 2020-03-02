@@ -1,4 +1,4 @@
-package io.cloudbeat.common;
+package io.cloudbeat.common.model;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
