@@ -113,7 +113,7 @@ public abstract class CloudBeatTest {
             capabilities = DesiredCapabilities.chrome();
         }
 
-        return new RemoteWebDriver(new URL(""), capabilities);
+        return new RemoteWebDriver(new URL(DEFAULT_WEBDRIVER_URL), capabilities);
     }
 
     public void setWebDriver(WebDriver driver) {
