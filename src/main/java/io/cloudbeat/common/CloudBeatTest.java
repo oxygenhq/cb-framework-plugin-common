@@ -2,7 +2,10 @@ package io.cloudbeat.common;
 
 import com.smartbear.har.model.HarEntry;
 import com.smartbear.har.model.HarLog;
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
 import io.cloudbeat.common.model.FailureModel;
+import io.cloudbeat.common.model.PayloadModel;
 import io.cloudbeat.common.model.ResultStatus;
 import io.cloudbeat.common.model.StepModel;
 import io.cloudbeat.common.restassured.RestAssuredFailureListener;
@@ -10,14 +13,15 @@ import io.cloudbeat.common.restassured.RestAssuredRequestLogger;
 import io.cloudbeat.common.webdriver.WebDriverEventHandler;
 import io.restassured.RestAssured;
 import io.restassured.config.FailureConfig;
+import javafx.util.Pair;
 import org.apache.commons.lang3.StringUtils;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
-import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.events.EventFiringWebDriver;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -25,9 +29,11 @@ import java.util.stream.Collectors;
 
 public abstract class CloudBeatTest {
     public static final String DEFAULT_WEBDRIVER_URL = "http://localhost:4444/wd/hub";
+    public static final String DEFAULT_APPIUM_URL = "http://localhost:4723/wd/hub";
+
+    protected WebDriver driver;
 
     private Map<String, ArrayList<StepModel>> _steps = new HashMap<>();
-    protected WebDriver driver;
     protected String currentStepName;
     protected String currentTestPackage;
 
@@ -65,17 +71,41 @@ public abstract class CloudBeatTest {
         return this.initWebDriver(null);
     }
 
-    public WebDriver initWebDriver(DesiredCapabilities userCapabilities) throws Exception {
+    public WebDriver setupMobileDriver() throws Exception {
+        return this.initMobileDriver(null);
+    }
+
+    public WebDriver initWebDriver(DesiredCapabilities userCapabilities) throws MalformedURLException {
+        MutableCapabilities capabilities = mergeUserAndCloudbeatCapabilities(userCapabilities);
+        RemoteWebDriver driver = new RemoteWebDriver(getDriverUrl(DEFAULT_WEBDRIVER_URL), capabilities);
+        EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
+        WebDriverEventHandler handler = new WebDriverEventHandler(this);
+        eventDriver.register(handler);
+        this.driver = eventDriver;
+        return driver;
+    };
+
+    public WebDriver initMobileDriver(DesiredCapabilities userCapabilities) throws MalformedURLException {
+        MutableCapabilities capabilities = mergeUserAndCloudbeatCapabilities(userCapabilities);
+        Object platformName = capabilities.getCapability("platformName");
+        if(platformName != null && "IOS".equalsIgnoreCase(platformName.toString())) {
+            this.driver = new IOSDriver<WebElement>(getDriverUrl(DEFAULT_APPIUM_URL), capabilities);
+            return this.driver;
+        }
+        
+        this.driver = new AndroidDriver(getDriverUrl(DEFAULT_APPIUM_URL), capabilities);
+        return this.driver;
+    }
+
+    protected MutableCapabilities mergeUserAndCloudbeatCapabilities(DesiredCapabilities userCapabilities) {
         String browserName = System.getProperty("browserName");
-        String webdriverUrl = System.getProperty("webdriverUrl");
-        if (StringUtils.isEmpty(webdriverUrl))
-            webdriverUrl = DEFAULT_WEBDRIVER_URL;
-        DesiredCapabilities capabilities = null;
+
+        MutableCapabilities capabilities = null;
         if (StringUtils.isEmpty(browserName)) {
             if (userCapabilities != null)
                 capabilities = userCapabilities;
             else
-                capabilities = DesiredCapabilities.chrome();
+                capabilities = new ChromeOptions();
         }
         else if ("firefox".equalsIgnoreCase(browserName)) {
             capabilities = DesiredCapabilities.firefox();
@@ -84,44 +114,31 @@ public abstract class CloudBeatTest {
             capabilities = DesiredCapabilities.internetExplorer();
         }
         else if ("chrome".equalsIgnoreCase(browserName)) {
-            capabilities = DesiredCapabilities.chrome();
+            capabilities = new ChromeOptions();
         }
         else {
-            capabilities = DesiredCapabilities.chrome();
+            capabilities = new ChromeOptions();
         }
+
+        String payloadPath = System.getProperty("payloadPath");
+        PayloadModel payloadModel = null;
+        try {
+            payloadModel = PayloadModel.Load(payloadPath);
+        }
+        catch (Exception exception) { }
+
+        if(payloadModel != null && payloadModel.capabilities != null) {
+            for (Map.Entry<String, String> pair : payloadModel.capabilities.entrySet()) {
+                capabilities.setCapability(pair.getKey(), pair.getValue());
+            }
+        }
+
         // merge capabilities received from CloudBeat with user provided capabilities
         if (userCapabilities != null && capabilities != null) {
             capabilities = userCapabilities.merge(capabilities);
         }
-        // create a webdriver instance and wrap it with CloudBeat event handler
-        RemoteWebDriver driver = new RemoteWebDriver(new URL(webdriverUrl), capabilities);
-        EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
-        WebDriverEventHandler handler = new WebDriverEventHandler(this);
-        eventDriver.register(handler);
-        this.driver = eventDriver;
-        return this.driver;
-    }
 
-    public WebDriver createWebDriverBasedOnCbCapabilities() throws Exception {
-        String browserName = System.getProperty("browserName");
-        DesiredCapabilities capabilities = null;
-        if("firefox".equalsIgnoreCase(browserName)){
-            capabilities = DesiredCapabilities.firefox();
-        } else if ("ie".equalsIgnoreCase(browserName)) {
-            capabilities = DesiredCapabilities.internetExplorer();
-        } else {
-            capabilities = DesiredCapabilities.chrome();
-        }
-
-        return new RemoteWebDriver(new URL(DEFAULT_WEBDRIVER_URL), capabilities);
-    }
-
-    public void setWebDriver(WebDriver driver) {
-        EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
-        WebDriverEventHandler handler = new WebDriverEventHandler(this);
-        eventDriver.register(handler);
-        this.driver = eventDriver;
-        this.driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+        return capabilities;
     }
 
     public abstract String getCurrentTestName();
@@ -220,7 +237,6 @@ public abstract class CloudBeatTest {
 
         finishStep(currentStep, isSuccess, failureModel);
 
-
         while (currentStep != null) {
             finishStep(currentStep, isSuccess, failureModel);
             steps = currentStep.steps;
@@ -233,6 +249,7 @@ public abstract class CloudBeatTest {
         currentStep.isFinished = true;
         currentStep.failure = failureModel;
         currentStep.duration = (new Date().toInstant().toEpochMilli() - currentStep.startTime.toInstant().toEpochMilli());
+
         if(!isSuccess && driver != null && driver instanceof TakesScreenshot) {
             currentStep.screenShot = ((TakesScreenshot)driver).getScreenshotAs(OutputType.BASE64);
         }
@@ -243,6 +260,14 @@ public abstract class CloudBeatTest {
                 .filter((step) -> !step.isFinished)
                 .findFirst()
                 .orElse(null);
+    }
+
+    protected URL getDriverUrl(String defaultUrl) throws MalformedURLException {
+        String webDriverUrl = System.getProperty("webdriverUrl");
+        if (StringUtils.isEmpty(webDriverUrl))
+            webDriverUrl = defaultUrl;
+
+        return new URL(webDriverUrl);
     }
 
     public ArrayList<StepModel> getStepsForMethod(String methodName, boolean isSuccess, FailureModel failureModel) {
@@ -284,9 +309,6 @@ public abstract class CloudBeatTest {
         if (driver != null) {
             driver.close();
             driver.quit();
-            this.driver = null;
         }
     }
-
-
 }

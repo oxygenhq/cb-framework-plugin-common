@@ -26,7 +26,7 @@ public class FailureModel {
         StackTraceElement[] filteredStackTrace =
                 Helper.getStackTraceStartingFromPackage(throwable.getStackTrace(), testPackageName);
         this.subtype = throwable.getClass().getSimpleName();
-        this.type = FAILURE_TYPE;
+        this.type = throwable.getClass().getSimpleName();
         this.data = stackTrace;
         this.stacktrace = Helper.stackTraceToStringArray(filteredStackTrace);
         this.message = throwable.getMessage();
