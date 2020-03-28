@@ -2,6 +2,7 @@ package io.cloudbeat.common;
 
 import com.smartbear.har.model.HarEntry;
 import com.smartbear.har.model.HarLog;
+import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.ios.IOSDriver;
 import io.cloudbeat.common.model.FailureModel;
@@ -87,13 +88,11 @@ public abstract class CloudBeatTest {
 
     public WebDriver initMobileDriver(DesiredCapabilities userCapabilities) throws MalformedURLException {
         MutableCapabilities capabilities = mergeUserAndCloudbeatCapabilities(userCapabilities);
-        Object platformName = capabilities.getCapability("platformName");
-        if(platformName != null && "IOS".equalsIgnoreCase(platformName.toString())) {
-            this.driver = new IOSDriver<WebElement>(getDriverUrl(DEFAULT_APPIUM_URL), capabilities);
-            return this.driver;
-        }
-        
-        this.driver = new AndroidDriver(getDriverUrl(DEFAULT_APPIUM_URL), capabilities);
+        AppiumDriver driver = new AppiumDriver(getDriverUrl(DEFAULT_APPIUM_URL), capabilities);
+        EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
+        WebDriverEventHandler handler = new WebDriverEventHandler(this);
+        eventDriver.register(handler);
+        this.driver = eventDriver;
         return this.driver;
     }
 
@@ -120,7 +119,7 @@ public abstract class CloudBeatTest {
             capabilities = new ChromeOptions();
         }
 
-        String payloadPath = System.getProperty("payloadPath");
+        String payloadPath = System.getProperty("payloadpath");
         PayloadModel payloadModel = null;
         try {
             payloadModel = PayloadModel.Load(payloadPath);
