@@ -22,6 +22,7 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.events.EventFiringWebDriver;
 
+import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -37,6 +38,8 @@ public abstract class CloudBeatTest {
     private Map<String, ArrayList<StepModel>> _steps = new HashMap<>();
     protected String currentStepName;
     protected String currentTestPackage;
+
+    private List<String> excludeCapabilityKeys = Arrays.asList(new String[] { "technologyName", "goog:chromeOptions", "browserName" });
 
     public void setupTest() {
         this.setupTest(null);
@@ -77,7 +80,7 @@ public abstract class CloudBeatTest {
     }
 
     public WebDriver initWebDriver(DesiredCapabilities userCapabilities) throws MalformedURLException {
-        MutableCapabilities capabilities = mergeUserAndCloudbeatCapabilities(userCapabilities);
+        DesiredCapabilities capabilities = mergeUserAndCloudbeatCapabilities(userCapabilities);
         RemoteWebDriver driver = new RemoteWebDriver(getDriverUrl(DEFAULT_WEBDRIVER_URL), capabilities);
         EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
         WebDriverEventHandler handler = new WebDriverEventHandler(this);
@@ -87,7 +90,7 @@ public abstract class CloudBeatTest {
     };
 
     public WebDriver initMobileDriver(DesiredCapabilities userCapabilities) throws MalformedURLException {
-        MutableCapabilities capabilities = mergeUserAndCloudbeatCapabilities(userCapabilities);
+        DesiredCapabilities capabilities = mergeUserAndCloudbeatCapabilities(userCapabilities);
         AppiumDriver driver = new AppiumDriver(getDriverUrl(DEFAULT_APPIUM_URL), capabilities);
         EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
         WebDriverEventHandler handler = new WebDriverEventHandler(this);
@@ -96,15 +99,15 @@ public abstract class CloudBeatTest {
         return this.driver;
     }
 
-    protected MutableCapabilities mergeUserAndCloudbeatCapabilities(DesiredCapabilities userCapabilities) {
+    protected DesiredCapabilities mergeUserAndCloudbeatCapabilities(DesiredCapabilities userCapabilities) {
         String browserName = System.getProperty("browserName");
 
-        MutableCapabilities capabilities = null;
+        DesiredCapabilities capabilities = null;
         if (StringUtils.isEmpty(browserName)) {
             if (userCapabilities != null)
                 capabilities = userCapabilities;
             else
-                capabilities = new ChromeOptions();
+                capabilities = DesiredCapabilities.chrome();
         }
         else if ("firefox".equalsIgnoreCase(browserName)) {
             capabilities = DesiredCapabilities.firefox();
@@ -113,10 +116,10 @@ public abstract class CloudBeatTest {
             capabilities = DesiredCapabilities.internetExplorer();
         }
         else if ("chrome".equalsIgnoreCase(browserName)) {
-            capabilities = new ChromeOptions();
+            capabilities = DesiredCapabilities.chrome();
         }
         else {
-            capabilities = new ChromeOptions();
+            capabilities = DesiredCapabilities.chrome();
         }
 
         String payloadPath = System.getProperty("payloadpath");
@@ -128,6 +131,10 @@ public abstract class CloudBeatTest {
 
         if(payloadModel != null && payloadModel.capabilities != null) {
             for (Map.Entry<String, String> pair : payloadModel.capabilities.entrySet()) {
+                if (excludeCapabilityKeys.contains(pair.getKey())) {
+                    continue;
+                }
+
                 capabilities.setCapability(pair.getKey(), pair.getValue());
             }
         }
