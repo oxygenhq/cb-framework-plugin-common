@@ -30,6 +30,9 @@ public class FailureModel {
         this.data = stackTrace;
         this.stacktrace = Helper.stackTraceToStringArray(filteredStackTrace);
         this.message = throwable.getMessage();
+        if(this.message == null) {
+            this.message = "UNKNOWN_ERROR ";
+        }
         // set location attribute
         if (filteredStackTrace.length > 0) {
             this.location = filteredStackTrace[0].toString();
