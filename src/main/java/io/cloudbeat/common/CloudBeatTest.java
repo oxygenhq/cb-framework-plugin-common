@@ -54,8 +54,12 @@ public abstract class CloudBeatTest {
         }
     }
 
-    public void setupDriver(WebDriver driver) {
-        this.driver = driver;
+    public WebDriver setupDriver(WebDriver driver) {
+        EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
+        WebDriverEventHandler handler = new WebDriverEventHandler(this);
+        eventDriver.register(handler);
+        this.driver = eventDriver;
+        return driver;
     }
 
     protected String guessCurrentTestPackage() {
