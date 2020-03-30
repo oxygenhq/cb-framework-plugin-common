@@ -54,6 +54,10 @@ public abstract class CloudBeatTest {
         }
     }
 
+    public void setupDriver(WebDriver driver) {
+        this.driver = driver;
+    }
+
     protected String guessCurrentTestPackage() {
         // we assume that setupTest method is directly called from the main test class
         StackTraceElement[] stackTrace = Helper.getStackTrace();
