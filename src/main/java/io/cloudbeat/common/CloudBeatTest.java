@@ -323,14 +323,18 @@ public abstract class CloudBeatTest {
             }
         }
 
-        StepModel failureStep = new StepModel();
-        failureStep.isFinished = true;
-        failureStep.failure = failureModel;
-        failureStep.status = ResultStatus.Failed;
-        failureStep.name = "Error";
-
         ArrayList<StepModel> steps = new ArrayList();
-        steps.add(failureStep);
+
+        if(!isSuccess) {
+            StepModel failureStep = new StepModel();
+            failureStep.isFinished = true;
+            failureStep.failure = failureModel;
+            failureStep.status = ResultStatus.Failed;
+            failureStep.name = failureModel.message == null ? "Error" : failureModel.message.split("\n")[0];
+
+            steps.add(failureStep);
+        }
+        
         return steps;
     }
 
