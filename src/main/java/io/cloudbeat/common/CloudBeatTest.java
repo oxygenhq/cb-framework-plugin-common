@@ -215,18 +215,16 @@ public abstract class CloudBeatTest {
     protected StackTraceElement getFirstTestRelatedCall(StackTraceElement[] stackTrace) {
         // if currentTestPackage is defined, then find the first call in the stack trace that matches package name
         if (!StringUtils.isEmpty(this.currentTestPackage)) {
-            Optional<StackTraceElement> firstCall =  Arrays.stream(stackTrace).filter(call -> call.toString().startsWith(this.currentTestPackage)).findFirst();
-            if(firstCall.isPresent()) {
-                return firstCall.get();
+            return Arrays.stream(stackTrace).filter(call -> call.toString().startsWith(this.currentTestPackage)).findFirst().get();
+        }
+        // alternatively, filter out unrelated calls (e.g. java, selenium, cloudbeat internals, etc.)
+        else {
+            StackTraceElement[] filtered = Helper.filterStackTrace(stackTrace);
+            if (filtered.length > 0) {
+                return filtered[0];
             }
+            return null;
         }
-
-        StackTraceElement[] filtered = Helper.filterStackTrace(stackTrace);
-        if (filtered.length > 0) {
-            return filtered[0];
-        }
-
-        return null;
     }
 
     private void endStepInner(String name, String testName, boolean isSuccess, FailureModel failureModel) {
@@ -290,14 +288,16 @@ public abstract class CloudBeatTest {
         if (_steps.containsKey(methodName))
         {
             ArrayList<StepModel> steps = _steps.get(methodName);
+            ArrayList<StepModel> notEndedSteps = new ArrayList<>(steps.stream().filter((stepModel -> !stepModel.isFinished)).collect(Collectors.toList()));
             Boolean isAnyFailSteps = steps.stream().anyMatch(stepModel -> stepModel.status == ResultStatus.Failed);
-
-            if (!isSuccess && !isAnyFailSteps) {
+            
+            if (notEndedSteps.isEmpty() && !isSuccess && !isAnyFailSteps) {
                 startStepInner("Assertion", methodName);
                 endStepInner("Assertion", methodName, false, failureModel);
-                steps = _steps.get(methodName);
-                ArrayList<StepModel> notEndedSteps = new ArrayList<>(steps.stream().filter((stepModel -> !stepModel.isFinished)).collect(Collectors.toList()));
-                notEndedSteps.forEach(x -> endStepInner(x.name, methodName, false, failureModel));
+            } else {
+                for (StepModel step : notEndedSteps) {
+                    endStepInner(step.name, methodName, isSuccess, failureModel);
+                }
             }
 
             return _steps.get(methodName);
