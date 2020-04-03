@@ -215,16 +215,18 @@ public abstract class CloudBeatTest {
     protected StackTraceElement getFirstTestRelatedCall(StackTraceElement[] stackTrace) {
         // if currentTestPackage is defined, then find the first call in the stack trace that matches package name
         if (!StringUtils.isEmpty(this.currentTestPackage)) {
-            return Arrays.stream(stackTrace).filter(call -> call.toString().startsWith(this.currentTestPackage)).findFirst().get();
-        }
-        // alternatively, filter out unrelated calls (e.g. java, selenium, cloudbeat internals, etc.)
-        else {
-            StackTraceElement[] filtered = Helper.filterStackTrace(stackTrace);
-            if (filtered.length > 0) {
-                return filtered[0];
+            Optional<StackTraceElement> relatedCall = Arrays.stream(stackTrace).filter(call -> call.toString().startsWith(this.currentTestPackage)).findFirst();
+            if(relatedCall.isPresent()) {
+                return relatedCall.get();
             }
-            return null;
         }
+
+        StackTraceElement[] filtered = Helper.filterStackTrace(stackTrace);
+        if (filtered.length > 0) {
+            return filtered[0];
+        }
+
+        return null;
     }
 
     private void endStepInner(String name, String testName, boolean isSuccess, FailureModel failureModel) {
@@ -287,24 +289,51 @@ public abstract class CloudBeatTest {
     public ArrayList<StepModel> getStepsForMethod(String methodName, boolean isSuccess, FailureModel failureModel) {
         if (_steps.containsKey(methodName))
         {
+            if(isSuccess) return _steps.get(methodName);
+
             ArrayList<StepModel> steps = _steps.get(methodName);
-            ArrayList<StepModel> notEndedSteps = new ArrayList<>(steps.stream().filter((stepModel -> !stepModel.isFinished)).collect(Collectors.toList()));
+            StepModel firstNotEndedStep = getFirstNotFinishedStep(steps);
+
+            while (firstNotEndedStep != null && firstNotEndedStep.steps != null && !firstNotEndedStep.steps.isEmpty()) {
+                steps = firstNotEndedStep.steps;
+                firstNotEndedStep = getFirstNotFinishedStep(steps);
+            }
+
+
             Boolean isAnyFailSteps = steps.stream().anyMatch(stepModel -> stepModel.status == ResultStatus.Failed);
-            
-            if (notEndedSteps.isEmpty() && !isSuccess && !isAnyFailSteps) {
-                startStepInner("Assertion", methodName);
-                endStepInner("Assertion", methodName, false, failureModel);
-            } else {
-                for (StepModel step : notEndedSteps) {
-                    endStepInner(step.name, methodName, isSuccess, failureModel);
+
+            if(!isAnyFailSteps) {
+                firstNotEndedStep = getFirstNotFinishedStep(steps);
+
+                if (firstNotEndedStep == null) {
+                    startStepInner("Assertion", methodName);
+                    endStepInner("Assertion", methodName, false, failureModel);
                 }
             }
 
-            return _steps.get(methodName);
+            steps = _steps.get(methodName);
+            steps.stream()
+                .filter(x -> !x.isFinished)
+                .forEach(x -> endStepInner(x.name, methodName, false, failureModel));
+
+
+            steps = _steps.get(methodName);
+            if(steps != null && !steps.isEmpty()) {
+                return steps;
+            }
         }
 
-        return null;
+        StepModel failureStep = new StepModel();
+        failureStep.isFinished = true;
+        failureStep.failure = failureModel;
+        failureStep.status = ResultStatus.Failed;
+        failureStep.name = "Error";
+
+        ArrayList<StepModel> steps = new ArrayList();
+        steps.add(failureStep);
+        return steps;
     }
+
     public void addHar(HarLog har) {
         /*StepModel currentStep = getFirstNotFinishedStep(steps);
         if (currentStep == null)
