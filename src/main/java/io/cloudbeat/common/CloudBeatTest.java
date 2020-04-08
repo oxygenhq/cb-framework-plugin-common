@@ -1,33 +1,29 @@
 package io.cloudbeat.common;
 
-import com.smartbear.har.model.HarEntry;
-import com.smartbear.har.model.HarLog;
+import com.google.sitebricks.conversion.generics.CaptureType;
 import io.appium.java_client.AppiumDriver;
-import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.ios.IOSDriver;
-import io.cloudbeat.common.model.FailureModel;
-import io.cloudbeat.common.model.PayloadModel;
-import io.cloudbeat.common.model.ResultStatus;
-import io.cloudbeat.common.model.StepModel;
+import io.cloudbeat.common.model.*;
 import io.cloudbeat.common.restassured.RestAssuredFailureListener;
 import io.cloudbeat.common.restassured.RestAssuredRequestLogger;
-import io.cloudbeat.common.webdriver.WebDriverEventHandler;
 import io.restassured.RestAssured;
 import io.restassured.config.FailureConfig;
-import javafx.util.Pair;
+import net.lightbody.bmp.core.har.Har;
+import net.lightbody.bmp.proxy.ProxyServer;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.logging.LogEntries;
+import org.openqa.selenium.logging.LogEntry;
+import org.openqa.selenium.logging.LogType;
+import org.openqa.selenium.logging.LoggingPreferences;
+import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.events.EventFiringWebDriver;
 
-import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.logging.Level;
 
 public abstract class CloudBeatTest {
     public static final String DEFAULT_WEBDRIVER_URL = "http://localhost:4444/wd/hub";
@@ -35,11 +31,13 @@ public abstract class CloudBeatTest {
 
     protected WebDriver driver;
 
-    private Map<String, ArrayList<StepModel>> _steps = new HashMap<>();
+    private Map<String, ArrayList<StepModel>> _steps = new HashMap();
     protected String currentStepName;
     protected String currentTestPackage;
+    private LogEntries logEntries = new LogEntries(new ArrayList());
 
     private List<String> excludeCapabilityKeys = Arrays.asList(new String[] { "technologyName", "goog:chromeOptions", "browserName" });
+    private ProxyServer proxyServer;
 
     public void setupTest() {
         this.setupTest(null);
@@ -87,7 +85,7 @@ public abstract class CloudBeatTest {
         return this.initMobileDriver(null);
     }
 
-    public WebDriver initWebDriver(DesiredCapabilities userCapabilities) throws MalformedURLException {
+    public WebDriver initWebDriver(DesiredCapabilities userCapabilities) throws Exception {
         DesiredCapabilities capabilities = mergeUserAndCloudbeatCapabilities(userCapabilities);
         RemoteWebDriver driver = new RemoteWebDriver(getDriverUrl(DEFAULT_WEBDRIVER_URL), capabilities);
         EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
@@ -97,7 +95,7 @@ public abstract class CloudBeatTest {
         return driver;
     };
 
-    public WebDriver initMobileDriver(DesiredCapabilities userCapabilities) throws MalformedURLException {
+    public WebDriver initMobileDriver(DesiredCapabilities userCapabilities) throws Exception {
         DesiredCapabilities capabilities = mergeUserAndCloudbeatCapabilities(userCapabilities);
         AppiumDriver driver = new AppiumDriver(getDriverUrl(DEFAULT_APPIUM_URL), capabilities);
         EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
@@ -107,7 +105,7 @@ public abstract class CloudBeatTest {
         return this.driver;
     }
 
-    protected DesiredCapabilities mergeUserAndCloudbeatCapabilities(DesiredCapabilities userCapabilities) {
+    protected DesiredCapabilities mergeUserAndCloudbeatCapabilities(DesiredCapabilities userCapabilities) throws Exception {
         String browserName = System.getProperty("browserName");
 
         DesiredCapabilities capabilities = null;
@@ -147,10 +145,33 @@ public abstract class CloudBeatTest {
             }
         }
 
+        if(payloadModel != null && payloadModel.options != null
+                && ((payloadModel.options.containsKey("collectBrowserLogs") && Boolean.parseBoolean(payloadModel.options.get("collectBrowserLogs")))
+                || ((payloadModel.options.containsKey("collectDeviceLogs") && Boolean.parseBoolean(payloadModel.options.get("collectDeviceLogs")))))) {
+            LoggingPreferences logPrefs = new LoggingPreferences();
+            logPrefs.enable(LogType.BROWSER, Level.ALL);
+            capabilities.setCapability(CapabilityType.LOGGING_PREFS, logPrefs);
+        }
+
+        if(payloadModel != null && payloadModel.options != null
+                && payloadModel.options.containsKey("collectDeviceLogs")
+                && Boolean.parseBoolean(payloadModel.options.get("collectDeviceLogs"))) {
+            LoggingPreferences logPrefs = new LoggingPreferences();
+            logPrefs.enable(LogType.BROWSER, Level.ALL);
+            capabilities.setCapability(CapabilityType.LOGGING_PREFS, logPrefs);
+        }
+
         // merge capabilities received from CloudBeat with user provided capabilities
         if (userCapabilities != null && capabilities != null) {
             capabilities = userCapabilities.merge(capabilities);
         }
+
+        proxyServer = new ProxyServer(4499);
+        proxyServer.start();
+
+        Proxy proxy = proxyServer.seleniumProxy();
+
+        capabilities.setCapability(CapabilityType.PROXY, proxy);
 
         return capabilities;
     }
@@ -158,7 +179,7 @@ public abstract class CloudBeatTest {
     public abstract String getCurrentTestName();
 
     public void failCurrentStep(FailureModel failureModel) {
-        endStepInner(currentStepName, getCurrentTestName(), false, failureModel);
+        endStepInner(new EndStepModel(currentStepName, getCurrentTestName(), false, failureModel));
     }
 
     public String getCurrentStepName() {
@@ -170,10 +191,10 @@ public abstract class CloudBeatTest {
     }
 
     public void startStep(String name) {
-        startStepInner(name, getCurrentTestName());
+        startStepInner(name, getCurrentTestName(), null);
     }
 
-    private void startStepInner(String name, String testName) {
+    void startStepInner(String name, String testName, String pageRef) {
         System.out.println("Start step with name:" + name + " for method" + testName);
         currentStepName = name;
         StepModel newStep = new StepModel();
@@ -188,7 +209,13 @@ public abstract class CloudBeatTest {
 
             while (currentStep != null) {
                 steps = currentStep.steps;
+                newStep.parent = currentStep;
                 currentStep = getFirstNotFinishedStep(steps);
+            }
+
+            if(pageRef != null && newStep.parent != null && proxyServer != null) {
+                proxyServer.newHar(pageRef);
+                newStep.parent.pageRef = pageRef;
             }
 
             steps.add(newStep);
@@ -200,9 +227,7 @@ public abstract class CloudBeatTest {
         _steps.put(testName, steps);
     }
 
-    public void endStep(String name) {
-        endStepInner(name, getCurrentTestName(), true, null);
-    }
+    public void endStep(String name) { endStepInner(new EndStepModel(name, getCurrentTestName(), true)); }
 
     protected String getCurrentLocation() {
         StackTraceElement firstTestRelatedCall = this.getFirstTestRelatedCall(Helper.getStackTrace());
@@ -229,20 +254,20 @@ public abstract class CloudBeatTest {
         return null;
     }
 
-    private void endStepInner(String name, String testName, boolean isSuccess, FailureModel failureModel) {
-        System.out.println("End step with name:" + name + " with is success:" + isSuccess + " for method" + testName);
-        if (!_steps.containsKey(testName)) {
+    void endStepInner(EndStepModel endStepModel) {
+        System.out.println("End step with name:" + endStepModel.stepName + " with is success:" + endStepModel.isSuccess + " for method" + endStepModel.testName);
+        if (!_steps.containsKey(endStepModel.testName)) {
             return;
         }
 
-        ArrayList<StepModel> steps = _steps.get(testName);
+        ArrayList<StepModel> steps = _steps.get(endStepModel.testName);
         StepModel currentStep = getFirstNotFinishedStep(steps);
 
         if (currentStep == null) {
             return;
         }
 
-        while (!currentStep.name.equalsIgnoreCase(name)) {
+        while (!currentStep.name.equalsIgnoreCase(endStepModel.stepName)) {
             steps = currentStep.steps;
             currentStep = getFirstNotFinishedStep(steps);
 
@@ -251,22 +276,29 @@ public abstract class CloudBeatTest {
             }
         }
 
-        finishStep(currentStep, isSuccess, failureModel);
+        finishStep(currentStep, endStepModel);
 
         while (currentStep != null) {
-            finishStep(currentStep, isSuccess, failureModel);
+            finishStep(currentStep, endStepModel);
             steps = currentStep.steps;
             currentStep = getFirstNotFinishedStep(steps);
         }
     }
 
-    private void finishStep(StepModel currentStep, boolean isSuccess, FailureModel failureModel) {
-        currentStep.status = isSuccess ? ResultStatus.Passed : ResultStatus.Failed;
+    private void finishStep(StepModel currentStep, EndStepModel endStepModel) {
+        currentStep.status = endStepModel.isSuccess ? ResultStatus.Passed : ResultStatus.Failed;
         currentStep.isFinished = true;
-        currentStep.failure = failureModel;
+        currentStep.failure = endStepModel.failureModel;
         currentStep.duration = (new Date().toInstant().toEpochMilli() - currentStep.startTime.toInstant().toEpochMilli());
+        currentStep.loadEvent = endStepModel.loadEvent;
+        currentStep.domContentLoadedEvent = endStepModel.domContentLoadedEvent;
 
-        if(!isSuccess && driver != null && driver instanceof TakesScreenshot) {
+        if(currentStep.pageRef != null) {
+            currentStep.hars = proxyServer.getHar();
+            System.out.println("HARS SAVED");
+        }
+
+        if(!endStepModel.isSuccess && driver != null && driver instanceof TakesScreenshot) {
             currentStep.screenShot = ((TakesScreenshot)driver).getScreenshotAs(OutputType.BASE64);
         }
     }
@@ -306,15 +338,15 @@ public abstract class CloudBeatTest {
                 firstNotEndedStep = getFirstNotFinishedStep(steps);
 
                 if (firstNotEndedStep == null) {
-                    startStepInner("Assertion", methodName);
-                    endStepInner("Assertion", methodName, false, failureModel);
+                    startStepInner("Assertion", methodName, null);
+                    endStepInner(new EndStepModel("Assertion", methodName, false, failureModel));
                 }
             }
 
             steps = _steps.get(methodName);
             steps.stream()
                 .filter(x -> !x.isFinished)
-                .forEach(x -> endStepInner(x.name, methodName, false, failureModel));
+                .forEach(x -> endStepInner(new EndStepModel(x.name, methodName, false, failureModel)));
 
 
             steps = _steps.get(methodName);
@@ -338,24 +370,32 @@ public abstract class CloudBeatTest {
         return steps;
     }
 
-    public void addHar(HarLog har) {
-        /*StepModel currentStep = getFirstNotFinishedStep(steps);
-        if (currentStep == null)
-            return;     // this method must be called on unfinished step
-        if (currentStep.extra == null)
-            currentStep.extra = new ExtraModel();
-        if (currentStep.extra.har == null)
-            currentStep.extra.har = new HarLog()*/
-    }
+    public ArrayList<LogResult> getLastLogEntries() {
+        if(!driver.manage().logs().getAvailableLogTypes().contains(LogType.BROWSER)) {
+            return new ArrayList();
+        }
 
-    public void addHarEntry(HarEntry entry) {
+        LogEntries allLogEntries = driver.manage().logs().get(LogType.BROWSER);
 
+        List<LogEntry> logs = allLogEntries.getAll();
+
+        if(logEntries != null) {
+            logs.removeAll(logEntries.getAll());
+        }
+
+        logEntries = allLogEntries;
+        ArrayList<LogResult> result = new ArrayList();
+        logs.forEach(x -> result.add(new LogResult(x, "browser")));
+        return result;
     }
 
     protected void afterTest() {
-        if (driver != null) {
-            driver.close();
-            driver.quit();
+        try {
+            if (driver != null) {
+                driver.close();
+                driver.quit();
+            }
         }
+        catch (Exception e){}
     }
 }

@@ -1,15 +1,19 @@
 package io.cloudbeat.common.model;
 
-import java.util.Date;
+import org.openqa.selenium.logging.LogEntry;
+
+import java.util.logging.Level;
 
 public class LogResult {
-    public Date dateTime;
-    public LogType logType;
-    public String message;
-    public enum LogType
-    {
-        Info,
-        Warning,
-        Error,
+    public long time;
+    public Level level;
+    public String msg;
+    public String src;
+
+    public LogResult(LogEntry x, String source) {
+        time = x.getTimestamp();
+        level = x.getLevel();
+        msg = x.getMessage();
+        src = source;
     }
 }

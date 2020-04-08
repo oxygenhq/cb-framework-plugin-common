@@ -1,11 +1,9 @@
-package io.cloudbeat.common.webdriver;
+package io.cloudbeat.common;
 
 import io.cloudbeat.common.CloudBeatTest;
+import io.cloudbeat.common.model.EndStepModel;
 import io.cloudbeat.common.model.FailureModel;
-import org.openqa.selenium.By;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.support.events.WebDriverEventListener;
 
 import java.util.Hashtable;
@@ -42,12 +40,25 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeNavigateTo(final String s, final WebDriver webDriver) {
-        currentTest.startStep("Navigate to " + s);
+        currentTest.startStepInner("Navigate to " + s, currentTest.getCurrentTestName(), s);
     }
 
     @Override
     public void afterNavigateTo(final String s, final WebDriver webDriver) {
-        currentTest.endStep("Navigate to " + s);
+        String stepName = "Navigate to " + s;
+        EndStepModel endStepModel = new EndStepModel(stepName, currentTest.getCurrentTestName(), true);
+        JavascriptExecutor js = (JavascriptExecutor)webDriver;
+
+        long loadEvent = (long) js.executeScript("return (window.performance.timing.loadEventEnd - window.performance.timing.loadEventStart)");
+        long domContentLoadedEvent = (long) js.executeScript("return (window.performance.timing.domContentLoadedEventEnd - window.performance.timing.domContentLoadedEventStart)");
+
+        System.out.println("Load event time:" + loadEvent);
+        System.out.println("Dom content load event time:" + domContentLoadedEvent);
+
+        endStepModel.loadEvent = loadEvent;
+        endStepModel.domContentLoadedEvent = domContentLoadedEvent;
+
+        currentTest.endStepInner(endStepModel);
     }
 
     @Override

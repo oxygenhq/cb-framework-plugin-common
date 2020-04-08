@@ -17,6 +17,7 @@ public class PayloadModel {
     public Map<String, String> metadata;
     public Map<String, String> capabilities;
     public Map<String, String> environmentVariables;
+    public Map<String, String> options;
 
     public Map<String, Case> cases = new HashMap<>();
 
@@ -41,6 +42,7 @@ public class PayloadModel {
         payload.capabilities = mapper.readValue(rootNode.get("Capabilities").toString(), mapTypeRef);
         payload.metadata = mapper.readValue(rootNode.get("Metadata").toString(), mapTypeRef);
         payload.environmentVariables = mapper.readValue(rootNode.get("EnvironmentVariables").toString(), mapTypeRef);
+        payload.options = mapper.readValue(rootNode.get("Options").toString(), mapTypeRef);
 
         for (JsonNode caseNode : rootNode.get("Cases")) {
             PayloadModel.Case caze = new PayloadModel.Case();
