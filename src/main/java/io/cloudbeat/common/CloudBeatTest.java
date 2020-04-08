@@ -363,6 +363,10 @@ public abstract class CloudBeatTest {
     }
 
     public ArrayList<LogResult> getLastLogEntries() {
+        if(driver == null) {
+            return new ArrayList();
+        }
+
         ArrayList<LogResult> result = new ArrayList();
         driver.manage().logs().getAvailableLogTypes().stream().forEach(type -> {
             List<LogEntry> logs = driver.manage().logs().get(type).getAll();
