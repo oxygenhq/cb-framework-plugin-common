@@ -36,13 +36,14 @@ public class PayloadModel {
         final ObjectMapper mapper = new ObjectMapper();
         JsonNode rootNode = mapper.readValue(json, JsonNode.class);
         TypeReference<Map<String, Object>> mapTypeRef = new TypeReference<Map<String, Object>>() {};
+        TypeReference<Map<String, String>> mapStringTypeRef = new TypeReference<Map<String, String>>() {};
 
         payload.runId = rootNode.get("RunId").textValue();
         payload.instanceId = rootNode.get("InstanceId").textValue();
         payload.capabilities = mapper.readValue(rootNode.get("Capabilities").toString(), mapTypeRef);
         payload.metadata = mapper.readValue(rootNode.get("Metadata").toString(), mapTypeRef);
         payload.environmentVariables = mapper.readValue(rootNode.get("EnvironmentVariables").toString(), mapTypeRef);
-        payload.options = mapper.readValue(rootNode.get("Options").toString(), mapTypeRef);
+        payload.options = mapper.readValue(rootNode.get("Options").toString(), mapStringTypeRef);
 
         for (JsonNode caseNode : rootNode.get("Cases")) {
             PayloadModel.Case caze = new PayloadModel.Case();

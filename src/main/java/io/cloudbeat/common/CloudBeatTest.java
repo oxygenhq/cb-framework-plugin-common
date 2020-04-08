@@ -34,7 +34,7 @@ public abstract class CloudBeatTest {
     private Map<String, ArrayList<StepModel>> _steps = new HashMap();
     protected String currentStepName;
     protected String currentTestPackage;
-    private LogEntries logEntries = new LogEntries(new ArrayList());
+    private ArrayList<LogResult> logEntries = new ArrayList();
 
     private List<String> excludeCapabilityKeys = Arrays.asList(new String[] { "technologyName", "goog:chromeOptions", "browserName" });
     private ProxyServer proxyServer;
@@ -151,14 +151,7 @@ public abstract class CloudBeatTest {
             LoggingPreferences logPrefs = new LoggingPreferences();
             logPrefs.enable(LogType.BROWSER, Level.ALL);
             capabilities.setCapability(CapabilityType.LOGGING_PREFS, logPrefs);
-        }
-
-        if(payloadModel != null && payloadModel.options != null
-                && payloadModel.options.containsKey("collectDeviceLogs")
-                && Boolean.parseBoolean(payloadModel.options.get("collectDeviceLogs"))) {
-            LoggingPreferences logPrefs = new LoggingPreferences();
-            logPrefs.enable(LogType.BROWSER, Level.ALL);
-            capabilities.setCapability(CapabilityType.LOGGING_PREFS, logPrefs);
+            System.out.println("Browser logs turn on");
         }
 
         // merge capabilities received from CloudBeat with user provided capabilities
@@ -295,7 +288,6 @@ public abstract class CloudBeatTest {
 
         if(currentStep.pageRef != null) {
             currentStep.hars = proxyServer.getHar();
-            System.out.println("HARS SAVED");
         }
 
         if(!endStepModel.isSuccess && driver != null && driver instanceof TakesScreenshot) {
@@ -371,21 +363,17 @@ public abstract class CloudBeatTest {
     }
 
     public ArrayList<LogResult> getLastLogEntries() {
-        if(!driver.manage().logs().getAvailableLogTypes().contains(LogType.BROWSER)) {
-            return new ArrayList();
-        }
-
-        LogEntries allLogEntries = driver.manage().logs().get(LogType.BROWSER);
-
-        List<LogEntry> logs = allLogEntries.getAll();
+        ArrayList<LogResult> result = new ArrayList();
+        driver.manage().logs().getAvailableLogTypes().stream().forEach(type -> {
+            List<LogEntry> logs = driver.manage().logs().get(type).getAll();
+            logs.stream().forEach(x -> result.add(new LogResult(x, type)));
+        });
 
         if(logEntries != null) {
-            logs.removeAll(logEntries.getAll());
+            result.removeAll(logEntries);
         }
 
-        logEntries = allLogEntries;
-        ArrayList<LogResult> result = new ArrayList();
-        logs.forEach(x -> result.add(new LogResult(x, "browser")));
+        logEntries = result;
         return result;
     }
 
