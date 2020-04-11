@@ -387,6 +387,10 @@ public abstract class CloudBeatTest {
                 driver.close();
                 driver.quit();
             }
+
+            if (proxyServer!= null) {
+                proxyServer.stop();
+            }
         }
         catch (Exception e){}
     }
