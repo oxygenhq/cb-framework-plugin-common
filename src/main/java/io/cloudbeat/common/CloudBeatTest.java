@@ -29,6 +29,9 @@ public abstract class CloudBeatTest {
     public static final String DEFAULT_WEBDRIVER_URL = "http://localhost:4444/wd/hub";
     public static final String DEFAULT_APPIUM_URL = "http://localhost:4723/wd/hub";
 
+    private static HashSet<Integer> proxyPorts = new HashSet();
+    private int proxyPort;
+
     protected WebDriver driver;
 
     private Map<String, ArrayList<StepModel>> _steps = new HashMap();
@@ -159,7 +162,7 @@ public abstract class CloudBeatTest {
             capabilities = userCapabilities.merge(capabilities);
         }
 
-        proxyServer = new ProxyServer(4499);
+        proxyServer = new ProxyServer(GetPortForProxy());
         proxyServer.start();
 
         Proxy proxy = proxyServer.seleniumProxy();
@@ -381,6 +384,18 @@ public abstract class CloudBeatTest {
         return result;
     }
 
+    private int GetPortForProxy() {
+        int port = 0;
+        do {
+            port = 4000 + (int)(Math.random() * ((8000 - 4000) + 1));
+        }
+        while (proxyPorts.contains(port));
+
+        proxyPorts.add(port);
+        proxyPort = port;
+        return port;
+    }
+
     protected void afterTest() {
         try {
             if (driver != null) {
@@ -390,6 +405,10 @@ public abstract class CloudBeatTest {
 
             if (proxyServer!= null) {
                 proxyServer.stop();
+            }
+
+            if(proxyPorts.contains(proxyPort)) {
+                proxyPorts.remove(proxyPort);
             }
         }
         catch (Exception e){}
