@@ -99,7 +99,7 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void afterFindBy(final By by, final WebElement webElement, final WebDriver webDriver) {
-        elementHash.put(webElement.hashCode(), by.toString());
+        //elementHash.put(webElement.hashCode(), by.toString());
         final String locatorDispName = this.getLocatorDisplayName(by);
         currentTest.endStep(String.format("Find element %s",  locatorDispName));
     }
