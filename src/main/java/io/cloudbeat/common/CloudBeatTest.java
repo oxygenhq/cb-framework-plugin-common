@@ -29,9 +29,6 @@ public abstract class CloudBeatTest {
     public static final String DEFAULT_WEBDRIVER_URL = "http://localhost:4444/wd/hub";
     public static final String DEFAULT_APPIUM_URL = "http://localhost:4723/wd/hub";
 
-    private static HashSet<Integer> proxyPorts = new HashSet();
-    private int proxyPort;
-
     protected WebDriver driver;
 
     private Map<String, ArrayList<StepModel>> _steps = new HashMap();
@@ -40,7 +37,6 @@ public abstract class CloudBeatTest {
     private ArrayList<LogResult> logEntries = new ArrayList();
 
     private List<String> excludeCapabilityKeys = Arrays.asList(new String[] { "technologyName", "goog:chromeOptions", "browserName" });
-    private ProxyServer proxyServer;
 
     public void setupTest() {
         this.setupTest(null);
@@ -162,13 +158,6 @@ public abstract class CloudBeatTest {
             capabilities = userCapabilities.merge(capabilities);
         }
 
-        proxyServer = new ProxyServer(GetPortForProxy());
-        proxyServer.start();
-
-        Proxy proxy = proxyServer.seleniumProxy();
-
-        capabilities.setCapability(CapabilityType.PROXY, proxy);
-
         return capabilities;
     }
 
@@ -207,11 +196,6 @@ public abstract class CloudBeatTest {
                 steps = currentStep.steps;
                 newStep.parent = currentStep;
                 currentStep = getFirstNotFinishedStep(steps);
-            }
-
-            if(pageRef != null && newStep.parent != null && proxyServer != null) {
-                proxyServer.newHar(pageRef);
-                newStep.parent.pageRef = pageRef;
             }
 
             steps.add(newStep);
@@ -289,10 +273,6 @@ public abstract class CloudBeatTest {
         currentStep.loadEvent = endStepModel.loadEvent;
         currentStep.domContentLoadedEvent = endStepModel.domContentLoadedEvent;
 
-        if(currentStep.pageRef != null) {
-            currentStep.hars = proxyServer.getHar();
-        }
-
         if(!endStepModel.isSuccess && driver != null && driver instanceof TakesScreenshot) {
             currentStep.screenShot = ((TakesScreenshot)driver).getScreenshotAs(OutputType.BASE64);
         }
@@ -306,7 +286,22 @@ public abstract class CloudBeatTest {
     }
 
     protected URL getDriverUrl(String defaultUrl) throws MalformedURLException {
-        String webDriverUrl = System.getProperty("webdriverUrl");
+        String payloadPath = System.getProperty("payloadpath");
+        String webDriverUrl = new String();
+        PayloadModel payloadModel = null;
+        try {
+            payloadModel = PayloadModel.Load(payloadPath);
+            if(payloadModel != null && payloadModel.metadata != null) {
+                if(payloadModel.metadata.containsKey("seleniumUrl")) {
+                    webDriverUrl = payloadModel.metadata.get("seleniumUrl");
+                }
+                else if(payloadModel.metadata.containsKey("appiumUrl")) {
+                    webDriverUrl =  payloadModel.metadata.get("appiumUrl");
+                }
+            }
+        }
+        catch (Exception exception) { }
+        
         if (StringUtils.isEmpty(webDriverUrl))
             webDriverUrl = defaultUrl;
 
@@ -384,31 +379,11 @@ public abstract class CloudBeatTest {
         return result;
     }
 
-    private int GetPortForProxy() {
-        int port = 0;
-        do {
-            port = 4000 + (int)(Math.random() * ((8000 - 4000) + 1));
-        }
-        while (proxyPorts.contains(port));
-
-        proxyPorts.add(port);
-        proxyPort = port;
-        return port;
-    }
-
     protected void afterTest() {
         try {
             if (driver != null) {
                 driver.close();
                 driver.quit();
-            }
-
-            if (proxyServer!= null) {
-                proxyServer.stop();
-            }
-
-            if(proxyPorts.contains(proxyPort)) {
-                proxyPorts.remove(proxyPort);
             }
         }
         catch (Exception e){}
