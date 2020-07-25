@@ -29,7 +29,7 @@ public abstract class CloudBeatTest {
     public static final String DEFAULT_WEBDRIVER_URL = "http://localhost:4444/wd/hub";
     public static final String DEFAULT_APPIUM_URL = "http://localhost:4723/wd/hub";
 
-    protected WebDriver driver;
+    public WebDriver driver;
 
     private Map<String, ArrayList<StepModel>> _steps = new HashMap();
     protected String currentStepName;
