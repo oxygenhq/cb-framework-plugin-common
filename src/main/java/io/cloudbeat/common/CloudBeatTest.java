@@ -278,7 +278,10 @@ public abstract class CloudBeatTest {
         currentStep.domContentLoadedEvent = endStepModel.domContentLoadedEvent;
 
         if(!endStepModel.isSuccess && driver != null && driver instanceof TakesScreenshot) {
-            currentStep.screenShot = ((TakesScreenshot)driver).getScreenshotAs(OutputType.BASE64);
+            try {
+                currentStep.screenShot = ((TakesScreenshot)driver).getScreenshotAs(OutputType.BASE64);
+            }
+            catch (Exception e) {}
         }
     }
 
@@ -313,6 +316,7 @@ public abstract class CloudBeatTest {
     }
 
     public ArrayList<StepModel> getStepsForMethod(String methodName, boolean isSuccess, FailureModel failureModel) {
+        System.out.println("Packing steps for method " + methodName);
         if (_steps.containsKey(methodName))
         {
             if(isSuccess) return _steps.get(methodName);
