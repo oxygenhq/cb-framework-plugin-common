@@ -147,10 +147,14 @@ public abstract class CloudBeatTest {
         if(payloadModel != null && payloadModel.options != null
                 && ((payloadModel.options.containsKey("collectBrowserLogs") && Boolean.parseBoolean(payloadModel.options.get("collectBrowserLogs")))
                 || ((payloadModel.options.containsKey("collectDeviceLogs") && Boolean.parseBoolean(payloadModel.options.get("collectDeviceLogs")))))) {
-            LoggingPreferences logPrefs = new LoggingPreferences();
-            logPrefs.enable(LogType.BROWSER, Level.ALL);
-            capabilities.setCapability(CapabilityType.LOGGING_PREFS, logPrefs);
-            System.out.println("Browser logs turn on");
+
+            try {
+                LoggingPreferences logPrefs = new LoggingPreferences();
+                logPrefs.enable(LogType.BROWSER, Level.ALL);
+                capabilities.setCapability(CapabilityType.LOGGING_PREFS, logPrefs);
+                System.out.println("Browser logs turn on");
+            }
+            catch (Exception e) {}
         }
 
         // merge capabilities received from CloudBeat with user provided capabilities
