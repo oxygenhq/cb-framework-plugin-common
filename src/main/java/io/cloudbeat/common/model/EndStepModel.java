@@ -7,7 +7,7 @@ public class EndStepModel {
         this.isSuccess = isSuccess;
     }
 
-    public EndStepModel(String stepName, String testName, boolean isSuccess, FailureModel failureModel) {
+    public EndStepModel(String stepName, String testName, boolean isSuccess, FailureResult failureModel) {
         this.testName = testName;
         this.stepName = stepName;
         this.isSuccess = isSuccess;
@@ -20,5 +20,5 @@ public class EndStepModel {
     public long domContentLoadedEvent;
     public boolean isSuccess;
     public String pageRef;
-    public FailureModel failureModel;
+    public FailureResult failureModel;
 }

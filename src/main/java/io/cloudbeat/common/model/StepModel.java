@@ -10,7 +10,7 @@ import java.util.Dictionary;
 public class StepModel extends TestResultBase {
     public String location;
     public Dictionary<String, String> stats;
-    public FailureModel failure;
+    public FailureResult failure;
     public String screenShot;
     public StepModel parent;
     public ArrayList<StepModel> steps;

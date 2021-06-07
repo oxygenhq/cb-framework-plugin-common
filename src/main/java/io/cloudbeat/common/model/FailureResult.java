@@ -5,20 +5,20 @@ import io.cloudbeat.common.Helper;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public class FailureModel {
+public class FailureResult {
     public final static String FAILURE_TYPE = "JAVA_ERROR";
-    public FailureModel() {}
+    public FailureResult() {}
 
-    public FailureModel(String message) {
+    public FailureResult(String message) {
         type = FAILURE_TYPE;
         this.message = message;
     }
 
-    public FailureModel(Throwable throwable) {
+    public FailureResult(Throwable throwable) {
         this(throwable, null);
     }
 
-    public FailureModel(Throwable throwable, String testPackageName) {
+    public FailureResult(Throwable throwable, String testPackageName) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         throwable.printStackTrace(pw);

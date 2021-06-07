@@ -10,7 +10,12 @@ public class ResultModel extends TestResultBase {
     public Map<String, String> environmentVariables;
     public String instanceId;
     public int totalCases;
-    public FailureModel failure;
+    public FailureResult failure;
     public List<SuiteModel> suites;
     public String runId;
+
+    public ResultModel(final String runId, final String instanceId) {
+        this.runId = runId;
+        this.instanceId = instanceId;
+    }
 }

@@ -1,8 +1,7 @@
 package io.cloudbeat.common;
 
-import io.cloudbeat.common.CloudBeatTest;
 import io.cloudbeat.common.model.EndStepModel;
-import io.cloudbeat.common.model.FailureModel;
+import io.cloudbeat.common.model.FailureResult;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.events.WebDriverEventListener;
 
@@ -157,7 +156,7 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void onException(final Throwable throwable, final WebDriver webDriver) {
-        final FailureModel failureModel = new FailureModel(throwable, this.currentTest.getCurrentTestPackageName());
+        final FailureResult failureModel = new FailureResult(throwable, this.currentTest.getCurrentTestPackageName());
         currentTest.failCurrentStep(failureModel);
     }
 

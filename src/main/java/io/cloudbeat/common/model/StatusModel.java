@@ -37,6 +37,6 @@ public class StatusModel {
         public int iterationsPassed;
         public int iterationsFailed;
         public float progress;
-        public List<FailureModel> failures;
+        public List<FailureResult> failures;
     }
 }

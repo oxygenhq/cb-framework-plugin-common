@@ -1,17 +1,13 @@
 package io.cloudbeat.common;
 
-import com.google.sitebricks.conversion.generics.CaptureType;
 import io.appium.java_client.AppiumDriver;
 import io.cloudbeat.common.model.*;
 import io.cloudbeat.common.restassured.RestAssuredFailureListener;
 import io.cloudbeat.common.restassured.RestAssuredRequestLogger;
 import io.restassured.RestAssured;
 import io.restassured.config.FailureConfig;
-import net.lightbody.bmp.core.har.Har;
-import net.lightbody.bmp.proxy.ProxyServer;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
-import org.openqa.selenium.logging.LogEntries;
 import org.openqa.selenium.logging.LogEntry;
 import org.openqa.selenium.logging.LogType;
 import org.openqa.selenium.logging.LoggingPreferences;
@@ -104,7 +100,7 @@ public abstract class CloudBeatTest {
         return this.driver;
     }
 
-    protected DesiredCapabilities mergeUserAndCloudbeatCapabilities(DesiredCapabilities userCapabilities) throws Exception {
+    public DesiredCapabilities mergeUserAndCloudbeatCapabilities(DesiredCapabilities userCapabilities) throws Exception {
         String browserName = System.getProperty("browserName");
 
         DesiredCapabilities capabilities = null;
@@ -128,9 +124,9 @@ public abstract class CloudBeatTest {
         }
 
         String payloadPath = System.getProperty("payloadpath");
-        PayloadModel payloadModel = null;
+        CbConfig payloadModel = null;
         try {
-            payloadModel = PayloadModel.Load(payloadPath);
+            payloadModel = CbConfig.load(payloadPath);
         }
         catch (Exception exception) { }
 
@@ -167,7 +163,7 @@ public abstract class CloudBeatTest {
 
     public abstract String getCurrentTestName();
 
-    public void failCurrentStep(FailureModel failureModel) {
+    public void failCurrentStep(FailureResult failureModel) {
         endStepInner(new EndStepModel(currentStepName, getCurrentTestName(), false, failureModel));
     }
 
@@ -295,9 +291,9 @@ public abstract class CloudBeatTest {
     protected URL getDriverUrl(String defaultUrl) throws MalformedURLException {
         String payloadPath = System.getProperty("payloadpath");
         String webDriverUrl = new String();
-        PayloadModel payloadModel = null;
+        CbConfig payloadModel = null;
         try {
-            payloadModel = PayloadModel.Load(payloadPath);
+            payloadModel = CbConfig.load(payloadPath);
             if(payloadModel != null && payloadModel.metadata != null) {
                 if(payloadModel.metadata.containsKey("seleniumUrl")) {
                     webDriverUrl = payloadModel.metadata.get("seleniumUrl");
@@ -315,7 +311,7 @@ public abstract class CloudBeatTest {
         return new URL(webDriverUrl);
     }
 
-    public ArrayList<StepModel> getStepsForMethod(String methodName, boolean isSuccess, FailureModel failureModel) {
+    public ArrayList<StepModel> getStepsForMethod(String methodName, boolean isSuccess, FailureResult failureModel) {
         System.out.println("Packing steps for method " + methodName);
         if (_steps.containsKey(methodName))
         {
