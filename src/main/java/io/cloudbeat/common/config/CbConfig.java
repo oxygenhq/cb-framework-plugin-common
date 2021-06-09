@@ -1,5 +1,6 @@
 package io.cloudbeat.common.config;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -16,16 +17,39 @@ public class CbConfig {
     public static final String CB_OPT_PREFIX = "CB_OPT.";
 
     final Properties props;
-    String apiToken;
-    String apiEndpointUrl;
     String runId;
     String instanceId;
     String projectId;
+    String apiToken;
+    String apiEndpointUrl;
+    String seleniumUrl;
+    String appiumUrl;
     Map<String, String> metadata;
     Map<String, String> capabilities;
     Map<String, String> envVars;
     Map<String, String> options;
+    List<String> tags;
+    List<String> cases;
 
+    public CbConfig() {
+        this.props = null;
+    }
+
+    public CbConfig(
+            String runId,
+            String instanceId,
+            String projectId,
+            String apiEndpointUrl,
+            String apiToken,
+            String seleniumUrl,
+            String appiumUrl,
+            Map<String, String> metadata,
+            Map<String, String> capabilities,
+            Map<String, String> envVars,
+            Map<String, String> options
+    ) {
+        this.props = null;
+    }
     public CbConfig(Properties props) {
         this.props = props;
         loadConfigFromProps();

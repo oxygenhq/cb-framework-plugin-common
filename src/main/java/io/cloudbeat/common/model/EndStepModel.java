@@ -1,5 +1,7 @@
 package io.cloudbeat.common.model;
 
+import io.cloudbeat.common.reporter.model.FailureResult;
+
 public class EndStepModel {
     public EndStepModel(String stepName, String testName, boolean isSuccess) {
         this.testName = testName;

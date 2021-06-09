@@ -2,13 +2,15 @@ package io.cloudbeat.common;
 
 import io.appium.java_client.AppiumDriver;
 import io.cloudbeat.common.model.*;
+import io.cloudbeat.common.reporter.model.FailureResult;
+import io.cloudbeat.common.reporter.model.LogEntryResult;
+import io.cloudbeat.common.reporter.wrapper.webdriver.WebDriverEventHandler;
 import io.cloudbeat.common.restassured.RestAssuredFailureListener;
 import io.cloudbeat.common.restassured.RestAssuredRequestLogger;
 import io.restassured.RestAssured;
 import io.restassured.config.FailureConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
-import org.openqa.selenium.logging.LogEntry;
 import org.openqa.selenium.logging.LogType;
 import org.openqa.selenium.logging.LoggingPreferences;
 import org.openqa.selenium.remote.CapabilityType;
@@ -30,7 +32,7 @@ public abstract class CloudBeatTest {
     private Map<String, ArrayList<StepModel>> _steps = new HashMap();
     protected String currentStepName;
     protected String currentTestPackage;
-    private ArrayList<LogResult> logEntries = new ArrayList();
+    private ArrayList<LogEntryResult> logEntries = new ArrayList();
 
     private List<String> excludeCapabilityKeys = Arrays.asList(new String[] { "technologyName", "goog:chromeOptions", "browserName" });
 
@@ -49,9 +51,9 @@ public abstract class CloudBeatTest {
 
     public WebDriver setupDriver(WebDriver driver) {
         EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
-        WebDriverEventHandler handler = new WebDriverEventHandler(this);
+        /*WebDriverEventHandler handler = new WebDriverEventHandler(this);
         eventDriver.register(handler);
-        this.driver = eventDriver;
+        this.driver = eventDriver;*/
         return driver;
     }
 
@@ -84,9 +86,9 @@ public abstract class CloudBeatTest {
         DesiredCapabilities capabilities = mergeUserAndCloudbeatCapabilities(userCapabilities);
         RemoteWebDriver driver = new RemoteWebDriver(getDriverUrl(DEFAULT_WEBDRIVER_URL), capabilities);
         EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
-        WebDriverEventHandler handler = new WebDriverEventHandler(this);
+        /*WebDriverEventHandler handler = new WebDriverEventHandler(this);
         eventDriver.register(handler);
-        this.driver = eventDriver;
+        this.driver = eventDriver;*/
         return driver;
     };
 
@@ -94,9 +96,9 @@ public abstract class CloudBeatTest {
         DesiredCapabilities capabilities = mergeUserAndCloudbeatCapabilities(userCapabilities);
         AppiumDriver driver = new AppiumDriver(getDriverUrl(DEFAULT_APPIUM_URL), capabilities);
         EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
-        WebDriverEventHandler handler = new WebDriverEventHandler(this);
+        /*WebDriverEventHandler handler = new WebDriverEventHandler(this);
         eventDriver.register(handler);
-        this.driver = eventDriver;
+        this.driver = eventDriver;*/
         return this.driver;
     }
 
@@ -356,7 +358,7 @@ public abstract class CloudBeatTest {
             failureStep.isFinished = true;
             failureStep.failure = failureModel;
             failureStep.status = ResultStatus.Failed;
-            failureStep.name = failureModel.message == null ? "Error" : failureModel.message.split("\n")[0];
+            failureStep.name = failureModel.getMessage() == null ? "Error" : failureModel.getMessage().split("\n")[0];
 
             steps.add(failureStep);
         }
@@ -364,17 +366,18 @@ public abstract class CloudBeatTest {
         return steps;
     }
 
-    public ArrayList<LogResult> getLastLogEntries() {
+    public ArrayList<LogEntryResult> getLastLogEntries() {
         if(driver == null) {
             return new ArrayList();
         }
 
-        ArrayList<LogResult> result = new ArrayList();
+        ArrayList<LogEntryResult> result = new ArrayList();
+        /*
         driver.manage().logs().getAvailableLogTypes().stream().forEach(type -> {
             List<LogEntry> logs = driver.manage().logs().get(type).getAll();
-            logs.stream().forEach(x -> result.add(new LogResult(x, type)));
+            logs.stream().forEach(x -> result.add(new LogEntryResult(x, type)));
         });
-
+*/
         if(logEntries != null) {
             result.removeAll(logEntries);
         }

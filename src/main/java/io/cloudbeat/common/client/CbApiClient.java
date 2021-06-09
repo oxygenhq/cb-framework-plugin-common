@@ -1,8 +1,7 @@
 package io.cloudbeat.common.client;
 
-import io.cloudbeat.common.model.RunStatus;
-import io.cloudbeat.common.model.StatusModel;
-import io.cloudbeat.common.model.TestStatus;
+import io.cloudbeat.common.reporter.model.RunStatus;
+import io.cloudbeat.common.reporter.model.TestStatus;
 
 import java.util.Map;
 

@@ -1,6 +1,7 @@
 package io.cloudbeat.common.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.cloudbeat.common.reporter.model.FailureResult;
 
 import java.util.List;
 

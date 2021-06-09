@@ -1,7 +1,4 @@
-package io.cloudbeat.common.model;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+package io.cloudbeat.common.reporter.model;
 
 import java.util.*;
 

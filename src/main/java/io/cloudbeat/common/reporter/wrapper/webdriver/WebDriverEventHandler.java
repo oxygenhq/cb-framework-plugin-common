@@ -1,51 +1,58 @@
-package io.cloudbeat.common;
+package io.cloudbeat.common.reporter.wrapper.webdriver;
 
-import io.cloudbeat.common.model.EndStepModel;
-import io.cloudbeat.common.model.FailureResult;
+import io.cloudbeat.common.reporter.CbTestReporter;
+import io.cloudbeat.common.reporter.model.FailureResult;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.events.WebDriverEventListener;
 
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 
 public class WebDriverEventHandler implements WebDriverEventListener {
 
-    private CloudBeatTest currentTest;
+    private CbTestReporter reporter;
     private final Hashtable<Integer, String> elementHash = new Hashtable();
+    private String lastStepId = null;
 
-    public WebDriverEventHandler(CloudBeatTest test)
+    public WebDriverEventHandler(CbTestReporter reporter)
     {
-        currentTest = test;
+        this.reporter = reporter;
     }
 
     @Override
     public void beforeAlertAccept(final WebDriver webDriver) {
-        currentTest.startStep("Alert accepting");
+        lastStepId = reporter.startStep("Accept alert");
     }
 
     @Override
     public void afterAlertAccept(final WebDriver webDriver) {
-        currentTest.endStep("Alert accepting");
-    }
-
-    @Override
-    public void afterAlertDismiss(final WebDriver webDriver) {
-        currentTest.startStep("Alert dismissing");
+        reporter.passStep(lastStepId);
+        lastStepId = null;
     }
 
     @Override
     public void beforeAlertDismiss(final WebDriver webDriver) {
-        currentTest.endStep("Alert dismissing");
+        lastStepId = reporter.startStep("Dismiss alert");
+    }
+
+    @Override
+    public void afterAlertDismiss(final WebDriver webDriver) {
+        reporter.passStep(lastStepId);
+        lastStepId = null;
     }
 
     @Override
     public void beforeNavigateTo(final String s, final WebDriver webDriver) {
-        currentTest.startStepInner("Navigate to " + s, currentTest.getCurrentTestName(), s);
+        lastStepId = reporter.startStep("Navigate to " + s);
     }
 
     @Override
     public void afterNavigateTo(final String s, final WebDriver webDriver) {
+        if (lastStepId == null)      // not suppose to happen
+            return;
+
         String stepName = "Navigate to " + s;
-        EndStepModel endStepModel = new EndStepModel(stepName, currentTest.getCurrentTestName(), true);
         JavascriptExecutor js = (JavascriptExecutor)webDriver;
 
         long loadEvent = (long) js.executeScript("return (window.performance.timing.loadEventEnd - window.performance.timing.loadEventStart)");
@@ -54,64 +61,69 @@ public class WebDriverEventHandler implements WebDriverEventListener {
         System.out.println("Load event time:" + loadEvent);
         System.out.println("Dom content load event time:" + domContentLoadedEvent);
 
-        endStepModel.loadEvent = loadEvent;
-        endStepModel.domContentLoadedEvent = domContentLoadedEvent;
+        Map<String, Number> stats = new HashMap<>();
+        stats.put("loadEvent", loadEvent);
+        stats.put("domContentLoadedEvent", domContentLoadedEvent);
 
-        currentTest.endStepInner(endStepModel);
+        reporter.passStep(lastStepId, stats);
+        lastStepId = null;
     }
 
     @Override
     public void beforeNavigateBack(final WebDriver webDriver) {
-        currentTest.startStep("Navigate back");
+        lastStepId = reporter.startStep("Navigate back");
     }
 
     @Override
     public void afterNavigateBack(final WebDriver webDriver) {
-        currentTest.endStep("Navigate back");
+        reporter.passStep(lastStepId);
+        lastStepId = null;
     }
 
     @Override
     public void beforeNavigateForward(final WebDriver webDriver) {
-        currentTest.startStep("Navigate forward");
+        lastStepId = reporter.startStep("Navigate forward");
     }
 
     @Override
     public void afterNavigateForward(final WebDriver webDriver) {
-        currentTest.endStep("Navigate forward");
+        reporter.passStep(lastStepId);
+        lastStepId = null;
     }
 
     @Override
     public void beforeNavigateRefresh(final WebDriver webDriver) {
-        currentTest.startStep("Navigate refresh");
+        lastStepId = reporter.startStep("Navigate refresh");
     }
 
     @Override
     public void afterNavigateRefresh(final WebDriver webDriver) {
-        currentTest.endStep("Navigate refresh");
+        reporter.passStep(lastStepId);
+        lastStepId = null;
     }
 
     @Override
     public void beforeFindBy(final By by, final WebElement webElement, final WebDriver webDriver) {
         final String locatorDispName = this.getLocatorDisplayName(by);
-        currentTest.startStep(String.format("Find element %s",  locatorDispName));
+        lastStepId = reporter.startStep(String.format("Find element %s",  locatorDispName));
     }
 
     @Override
     public void afterFindBy(final By by, final WebElement webElement, final WebDriver webDriver) {
-        //elementHash.put(webElement.hashCode(), by.toString());
-        final String locatorDispName = this.getLocatorDisplayName(by);
-        currentTest.endStep(String.format("Find element %s",  locatorDispName));
+        reporter.passStep(lastStepId);
+        lastStepId = null;
     }
 
     @Override
     public void beforeClickOn(final WebElement webElement, final WebDriver webDriver) {
         final String elmName = this.getElementDisplayName(webElement);
-        currentTest.startStep(String.format("Click on %s", elmName));
+        lastStepId = reporter.startStep(String.format("Click on %s", elmName));
     }
 
     @Override
     public void afterClickOn(final WebElement webElement, final WebDriver webDriver) {
-        currentTest.endStep(currentTest.getCurrentStepName());
+        reporter.passStep(lastStepId);
+        lastStepId = null;
     }
 
     @Override
@@ -121,7 +133,7 @@ public class WebDriverEventHandler implements WebDriverEventListener {
         for (final CharSequence charSequence : charSequences) {
             sb.append(charSequence.toString());
         }
-        currentTest.startStep(String.format("Set value \"%s\"", sb.toString()));
+        lastStepId = reporter.startStep(String.format("Set value \"%s\"", sb.toString()));
     }
 
     @Override
@@ -131,33 +143,36 @@ public class WebDriverEventHandler implements WebDriverEventListener {
         for (final CharSequence charSequence : charSequences) {
             sb.append(charSequence.toString());
         }
-        currentTest.endStep(String.format("Set value \"%s\"", sb.toString()));
+        reporter.passStep(lastStepId);
+        lastStepId = null;
     }
 
     @Override
     public void beforeScript(final String s, final WebDriver webDriver) {
-        currentTest.startStep("Executing script " + s);
+        lastStepId = reporter.startStep("Executing script " + s);
     }
 
     @Override
     public void afterScript(final String s, final WebDriver webDriver) {
-        currentTest.endStep("Executing script " + s);
+        reporter.passStep(lastStepId);
+        lastStepId = null;
     }
 
     @Override
     public void beforeSwitchToWindow(final String s, final WebDriver webDriver) {
-        currentTest.startStep("Switch to window " + s);
+        lastStepId = reporter.startStep("Switch to window " + s);
     }
 
     @Override
     public void afterSwitchToWindow(final String s, final WebDriver webDriver) {
-        currentTest.endStep("Switch to window " + s);
+        reporter.passStep(lastStepId);
+        lastStepId = null;
     }
 
     @Override
     public void onException(final Throwable throwable, final WebDriver webDriver) {
-        final FailureResult failureModel = new FailureResult(throwable, this.currentTest.getCurrentTestPackageName());
-        currentTest.failCurrentStep(failureModel);
+        //final FailureResult failureModel = new FailureResult(throwable, this.reporter.getCurrentTestPackageName());
+        reporter.failStep(lastStepId, throwable);
     }
 
     @Override
@@ -172,12 +187,13 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeGetText(final WebElement webElement, final WebDriver webDriver) {
-        currentTest.startStep("Getting text of  " + webElement.getText());
+        lastStepId = reporter.startStep("Getting text of  " + webElement.getText());
     }
 
     @Override
     public void afterGetText(final WebElement webElement, final WebDriver webDriver, final String s) {
-        currentTest.endStep("Getting text of  " + webElement.getText());
+        reporter.passStep(lastStepId);
+        lastStepId = null;
     }
 
     private String getLocatorDisplayName(final By by) {

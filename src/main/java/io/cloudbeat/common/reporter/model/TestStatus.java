@@ -1,9 +1,9 @@
-package io.cloudbeat.common.model;
+package io.cloudbeat.common.reporter.model;
 
 public enum TestStatus {
     PASSED("passed"),
     FAILED("failed"),
-    IGNORED("ignored"),
+    SKIPPED("skipped"),
     BROKEN("broken");
 
     private final String value;

@@ -1,6 +1,7 @@
 package io.cloudbeat.common.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.cloudbeat.common.reporter.model.FailureResult;
 import net.lightbody.bmp.core.har.Har;
 
 import java.util.ArrayList;

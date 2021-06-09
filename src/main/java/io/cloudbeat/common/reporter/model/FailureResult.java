@@ -1,4 +1,4 @@
-package io.cloudbeat.common.model;
+package io.cloudbeat.common.reporter.model;
 
 import io.cloudbeat.common.Helper;
 
@@ -7,6 +7,13 @@ import java.io.StringWriter;
 
 public class FailureResult {
     public final static String FAILURE_TYPE = "JAVA_ERROR";
+    String type;
+    String subtype;
+    String data;
+    String[] stacktrace;
+    String message;
+    String location;
+
     public FailureResult() {}
 
     public FailureResult(String message) {
@@ -39,10 +46,28 @@ public class FailureResult {
         }
     }
 
-    public String type;
-    public String subtype;
-    public String data;
-    public String[] stacktrace;
-    public String message;
-    public String location;
+    public String getType() {
+        return type;
+    }
+
+    public String getSubtype() {
+        return subtype;
+    }
+
+    public String getData() {
+        return data;
+    }
+
+    public String[] getStacktrace() {
+        return stacktrace;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
 }

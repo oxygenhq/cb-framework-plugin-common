@@ -9,8 +9,22 @@ import java.util.Properties;
 //import org.slf4j.LoggerFactory;
 
 public class CbTestContext {
+    /**
+     * Thread local context that stores information about not finished tests and steps.
+     */
+    private static class ThreadContext extends InheritableThreadLocal<CbTestContext> {
+        @Override
+        public CbTestContext initialValue() {
+            return new CbTestContext();
+        }
+
+        @Override
+        protected CbTestContext childValue(final CbTestContext parentStepContext) {
+            return parentStepContext;
+        }
+    }
     //private static final Logger LOGGER = LoggerFactory.getLogger(CbTestContext.class);
-    private static final ThreadLocal<CbTestContext> CURRENT_CONTEXT = new InheritableThreadLocal<>();
+    private static final ThreadContext CURRENT_CONTEXT = new ThreadContext();
 
             //InheritableThreadLocal.withInitial(() -> new CbTestContext());
     /*new ThreadLocal<CbTestContext>() {
@@ -27,6 +41,7 @@ public class CbTestContext {
     public CbTestContext() {
         config = new CbConfig(PropertiesLoader.load());
         reporter = new CbTestReporter(config);
+        CURRENT_CONTEXT.set(this);
     }
     /**
      * Returns a current test context linked to the current thread.
@@ -35,12 +50,12 @@ public class CbTestContext {
      */
     public static CbTestContext getInstance() {
         if (CURRENT_CONTEXT.get() == null)
-            CURRENT_CONTEXT.set(new CbTestContext());
+            return new CbTestContext();
         return CURRENT_CONTEXT.get();
     }
 
-    public static CbTestReporter getReporter() {
-        return getInstance().reporter;
+    public CbTestReporter getReporter() {
+        return this.reporter;
     }
 
     public CbConfig getConfig() { return config; }

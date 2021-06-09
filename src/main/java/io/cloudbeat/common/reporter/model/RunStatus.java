@@ -1,4 +1,4 @@
-package io.cloudbeat.common.model;
+package io.cloudbeat.common.reporter.model;
 
 public enum RunStatus {
     PENDING("pending"),
