@@ -43,7 +43,8 @@ public class CaseResult {
     public void end(TestStatus status, Throwable throwable) {
         this.endTime = Calendar.getInstance().getTimeInMillis();
         this.duration = endTime - startTime;
-        this.failure = new FailureResult(throwable);
+        if (throwable != null)
+            this.failure = new FailureResult(throwable);
         this.status = status != null ? status : calculateCaseStatus();
     }
 

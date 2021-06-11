@@ -91,4 +91,6 @@ public class StepResult {
     public StepResult getParentStep() { return parentStep; }
 
     public Map<String, Number> getStats() { return stats; }
+
+    public FailureResult getFailure() { return failure; }
 }

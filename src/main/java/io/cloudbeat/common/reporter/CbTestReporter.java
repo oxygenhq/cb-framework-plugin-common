@@ -125,6 +125,9 @@ public class CbTestReporter {
         this.lastCase = caseResult;
     }
 
+    public void endCase(final String caseFqn) throws Exception {
+        endCase(caseFqn, null, null);
+    }
     public void endCase(final String caseFqn, final TestStatus status, final Throwable throwable) throws Exception {
         if (lastCase == null || lastCase.getFqn() == null)
             return;
@@ -170,7 +173,6 @@ public class CbTestReporter {
     public void endLastStep() {
         if (lastStep != null) {
             endStep(lastStep.getId(), null, null);
-            lastStep = Optional.of(lastStep.getParentStep()).orElse(null);
         }
     }
 
@@ -213,6 +215,7 @@ public class CbTestReporter {
             return null;
         final StepResult endedStep = stepStack.pop();
         endedStep.end(status, throwable);
+        lastStep = endedStep.getParentStep();
         // make sure to end all children/parent steps, if they remain open
         stepStack.stream().forEach((step) -> {
             if (step.getEndTime() == 0)
