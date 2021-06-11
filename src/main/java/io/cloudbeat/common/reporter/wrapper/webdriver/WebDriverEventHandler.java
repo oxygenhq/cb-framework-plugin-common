@@ -172,7 +172,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
     @Override
     public void onException(final Throwable throwable, final WebDriver webDriver) {
         //final FailureResult failureModel = new FailureResult(throwable, this.reporter.getCurrentTestPackageName());
-        reporter.failStep(lastStepId, throwable);
+        if (lastStepId != null)
+            reporter.failStep(lastStepId, throwable);
     }
 
     @Override

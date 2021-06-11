@@ -6,16 +6,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public final class PropertiesLoader {
-    private static final String CB_PROPERTIES_FILE = "cloudbeat.properties";
+public final class PropertiesConfigLoader {
+    public static final String CB_PROPERTIES_FILE = "cloudbeat.properties";
 
     @NotNull
-    public static Properties load() {
+    public static CbConfig load() {
         final Properties properties = new Properties();
         loadPropertiesFrom(ClassLoader.getSystemClassLoader(), properties);
         loadPropertiesFrom(Thread.currentThread().getContextClassLoader(), properties);
         properties.putAll(System.getProperties());
-        return properties;
+        return new CbConfig(properties);
     }
 
     private static void loadPropertiesFrom(final ClassLoader classLoader, final Properties properties) {

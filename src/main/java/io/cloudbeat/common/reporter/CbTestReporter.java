@@ -3,6 +3,7 @@ package io.cloudbeat.common.reporter;
 import io.cloudbeat.common.client.CbApiClient;
 import io.cloudbeat.common.config.CbConfig;
 import io.cloudbeat.common.reporter.model.*;
+import io.cloudbeat.common.reporter.wrapper.webdriver.WebDriverWrapper;
 import io.cloudbeat.common.writer.ResultWriter;
 import org.apache.commons.lang3.SystemUtils;
 //import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.SystemUtils;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
+import java.util.function.Function;
 
 public class CbTestReporter {
     //private static final Logger LOGGER = LoggerFactory.getLogger(CbTestReporter.class);
@@ -24,6 +26,10 @@ public class CbTestReporter {
     private String frameworkVersion;
     private TestResult result;
     private boolean isStarted = false;
+
+    private SuiteResult lastSuite = null;
+    private CaseResult lastCase = null;
+    private StepResult lastStep = null;
 
     public CbTestReporter(CbConfig config) {
         this.config = config;
@@ -47,7 +53,7 @@ public class CbTestReporter {
     public void setFramework(final String frameworkName, final String frameworkVersion) {
         this.frameworkName = frameworkName;
         this.frameworkVersion = frameworkVersion;
-        if (result != null && !result.getAttributes().containsKey("framework.name")) {
+        if (result != null && !result.getMetaData().containsKey("framework.name")) {
             result.addAttribute("framework.name", frameworkName);
             result.addAttribute("framework.version", frameworkVersion);
         }
@@ -69,7 +75,7 @@ public class CbTestReporter {
             cbClient.startInstance(instance.getId(), instance.getRunId(), RunStatus.RUNNING, instance.getAttributes());
         else
             cbClient.postInstanceStatus(instance.getRunId(), instance.getId(), instance.getStatus());
-        result = new TestResult(instance.getRunId(), instance.getId());
+        result = new TestResult(instance.getRunId(), instance.getId(), config.getCapabilities(), config.getOptions(), config.getMetadata(), config.getEnvironmentVariables());
         // add system attributes (e.g. agent information)
         addSystemAttributes();
         // add framework details, if provided by framework implementation
@@ -116,54 +122,118 @@ public class CbTestReporter {
         );
         CaseResult caseResult = suiteResult.addNewCaseResult(name);
         caseResult.setFqn(fqn);
+        this.lastCase = caseResult;
     }
 
-    public void endCase(final String caseFqn, final String suiteFqn, final TestStatus status, final Throwable exception) throws Exception {
-        SuiteResult suiteResult = result.lastSuite(suiteFqn).orElseThrow(
-                () -> new Exception("Cannot find started suite: " + suiteFqn)
-        );
-        CaseResult caseResult = suiteResult.lastCase(caseFqn).orElseThrow(
-                () -> new Exception("Cannot find started case: " + caseFqn)
-        );
-        caseResult.end(status);
-        if (exception != null)
-            caseResult.setFailure(exception);
+    public void endCase(final String caseFqn, final TestStatus status, final Throwable throwable) throws Exception {
+        if (lastCase == null || lastCase.getFqn() == null)
+            return;
+        if (!lastCase.getFqn().equals(caseFqn))
+            throw new Exception("Cannot find started case: " + caseFqn);
+
+        lastCase.end(status, throwable);
+        lastCase = null;
     }
 
-    public void passCase(final String caseFqn, final String suiteFqn) throws Exception {
-        endCase(caseFqn, suiteFqn, TestStatus.PASSED, null);
+    public void passCase(final String caseFqn) throws Exception {
+        endCase(caseFqn, TestStatus.PASSED, null);
     }
 
-    public void failCase(final String caseFqn, final String suiteFqn, Throwable exception) throws Exception {
-        endCase(caseFqn, suiteFqn, TestStatus.FAILED, exception);
+    public void failCase(final String caseFqn, Throwable exception) throws Exception {
+        endCase(caseFqn, TestStatus.FAILED, exception);
     }
 
     public void skipCase(final String caseFqn, final String suiteFqn) throws Exception {
-        endCase(caseFqn, suiteFqn, TestStatus.SKIPPED, null);
+        endCase(caseFqn, TestStatus.SKIPPED, null);
     }
 
     public String startStep(final String name) {
-        return null;
+        return startStep(name, null, null);
     }
 
     public String startStep(final String name, final String fqn, final List<String> args) {
-        return null;
+        if (lastStep != null) {
+            lastStep = lastStep.addNewSubStep(name);
+        }
+        else if (lastCase != null) {
+            lastStep = lastCase.addNewStep(name);
+        }
+        else    // we are not suppose to call startStep if not case was started before
+            return null;
+        if (fqn != null)
+            lastStep.setFqn(fqn);
+        if (args != null)
+            lastStep.setArgs(args);
+        return lastStep.getId();
+    }
+
+    public void endLastStep() {
+        if (lastStep != null) {
+            endStep(lastStep.getId(), null, null);
+            lastStep = Optional.of(lastStep.getParentStep()).orElse(null);
+        }
     }
 
     public String passLastStep() {
         return null;
     }
 
-    public String passStep(final String stepId) {
-        return null;
+    public void passStep(final String stepId) {
+        passStep(stepId, null);
     }
 
-    public String passStep(final String stepId, Map<String, Number> stats) {
-        return null;
+    public void passStep(final String stepId, Map<String, Number> stats) {
+        final StepResult step = endStep(stepId, TestStatus.PASSED, null);
+        if (stats != null)
+            step.setStats(stats);
     }
 
-    public void failStep(final String stepId, Throwable throwable) {
+    public void failStep(final String name, Throwable throwable) {
+        failStep(name, null, throwable);
+    }
+    public void failStep(final String stepId, Map<String, Number> stats, Throwable throwable) {
+        endStep(stepId, TestStatus.FAILED, throwable);
+    }
 
+    public StepResult endStep(final String stepId, TestStatus status, Throwable throwable) {
+        if (lastStep == null || stepId == null)
+            return null;
+        LinkedList<StepResult> stepStack = new LinkedList<>();
+        StepResult currentStep = lastStep;
+        boolean stepFound = false;
+        while (currentStep != null) {
+            stepStack.push(currentStep);
+            if (currentStep.getId() != null && currentStep.getId().equals(stepId)) {
+                stepFound = true;
+                break;
+            }
+            currentStep = currentStep.getParentStep();
+        }
+        if (!stepFound)
+            return null;
+        final StepResult endedStep = stepStack.pop();
+        endedStep.end(status, throwable);
+        // make sure to end all children/parent steps, if they remain open
+        stepStack.stream().forEach((step) -> {
+            if (step.getEndTime() == 0)
+                step.end(status, throwable);
+        });
+        return endedStep;
+    }
+
+    public void step(final String name, Runnable stepFunc) {
+        final String stepId = startStep(name);
+        try {
+            stepFunc.run();
+            endStep(stepId, null, null);
+        }
+        catch (Throwable e) {
+            failStep(stepId, e);
+        }
+    }
+
+    public WebDriverWrapper getWebDriverWrapper() {
+        return new WebDriverWrapper(this);
     }
 
     /*
@@ -219,5 +289,9 @@ public class CbTestReporter {
         catch (UnknownHostException e) {
             return null;
         }
+    }
+
+    public StepResult getLastStep() {
+        return lastStep;
     }
 }

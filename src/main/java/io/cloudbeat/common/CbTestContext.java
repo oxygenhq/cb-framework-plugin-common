@@ -1,10 +1,11 @@
 package io.cloudbeat.common;
 
 import io.cloudbeat.common.config.CbConfig;
+import io.cloudbeat.common.config.CbConfigLoader;
 import io.cloudbeat.common.reporter.CbTestReporter;
-import io.cloudbeat.common.config.PropertiesLoader;
+import io.cloudbeat.common.config.PropertiesConfigLoader;
 
-import java.util.Properties;
+import java.io.IOException;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 
@@ -35,12 +36,22 @@ public class CbTestContext {
     };*/
             //new InheritableThreadLocal<>();
 
-    private final CbTestReporter reporter;
-    private final CbConfig config;
+    private CbTestReporter reporter;
+    private CbConfig config;
+    private boolean isActive;
 
     public CbTestContext() {
-        config = new CbConfig(PropertiesLoader.load());
-        reporter = new CbTestReporter(config);
+        isActive = false;
+        try {
+            config = CbConfigLoader.load();
+            if (config != null) {
+                reporter = new CbTestReporter(config);
+                isActive = true;
+            }
+        }
+        catch (IOException e) {
+
+        }
         CURRENT_CONTEXT.set(this);
     }
     /**
@@ -59,4 +70,6 @@ public class CbTestContext {
     }
 
     public CbConfig getConfig() { return config; }
+
+    public boolean isActive() { return isActive; }
 }

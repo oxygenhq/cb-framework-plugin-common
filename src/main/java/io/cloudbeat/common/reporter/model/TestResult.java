@@ -16,7 +16,7 @@ public class TestResult {
     long duration;
     Map<String, String> options;
     Map<String, String> capabilities;
-    Map<String, String> attributes = new HashMap<>();
+    //Map<String, String> attributes = new HashMap<>();
     Map<String, String> metaData;
     Map<String, String> environmentVariables;
     FailureResult failure;
@@ -40,7 +40,10 @@ public class TestResult {
         this.instanceId = instanceId;
         this.capabilities = capabilities != null ? capabilities : new HashMap<>();
         this.options = options;
-        this.metaData = metaData;
+        if (metaData == null)
+            this.metaData = new HashMap<>();
+        else
+            this.metaData = metaData;
         this.environmentVariables = environmentVariables;
         startTime = Calendar.getInstance().getTime().getTime();
     }
@@ -58,7 +61,7 @@ public class TestResult {
     }
 
     public void addAttribute(final String name, final String value) {
-        this.attributes.put(name, value);
+        this.metaData.put(name, value);
     }
 
     public void addCapability(final String name, final String value) {
@@ -91,6 +94,8 @@ public class TestResult {
 
     public long getEndTime() { return endTime; }
 
+    public long getDuration() { return duration; }
+
     public List<SuiteResult> getSuites() { return suites; }
 
     public Map<String, String> getOptions() {
@@ -99,10 +104,6 @@ public class TestResult {
 
     public Map<String, String> getCapabilities() {
         return capabilities;
-    }
-
-    public Map<String, String> getAttributes() {
-        return attributes;
     }
 
     public Map<String, String> getMetaData() {

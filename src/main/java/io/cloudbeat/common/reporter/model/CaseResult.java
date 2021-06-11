@@ -28,10 +28,39 @@ public class CaseResult {
         this.startTime = Calendar.getInstance().getTimeInMillis();
     }
 
+    public void end() {
+        end(null, null);
+    }
+
+    public void end(Throwable throwable) {
+        end(null, throwable);
+    }
+
     public void end(TestStatus status) {
+        end(status, null);
+    }
+
+    public void end(TestStatus status, Throwable throwable) {
         this.endTime = Calendar.getInstance().getTimeInMillis();
         this.duration = endTime - startTime;
-        this.status = status;
+        this.failure = new FailureResult(throwable);
+        this.status = status != null ? status : calculateCaseStatus();
+    }
+
+    public StepResult addNewStep(String name) {
+        StepResult newStep;
+        steps.add(newStep = new StepResult(name));
+        return newStep;
+    }
+
+    private TestStatus calculateCaseStatus() {
+        // if there is a direct failure attached to the case,
+        // mark it as failed, regardless its children status
+        if (failure != null)
+            return TestStatus.FAILED;
+        // determine case status by its children's status
+        boolean hasFailedStep = steps.stream().anyMatch(x -> x.status == TestStatus.FAILED);
+        return hasFailedStep ? TestStatus.FAILED : TestStatus.PASSED;
     }
 
     /* Setters */

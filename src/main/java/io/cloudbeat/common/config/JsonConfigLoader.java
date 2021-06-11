@@ -38,7 +38,12 @@ public final class JsonConfigLoader {
         if (rootNode.has("Cases")) {
             config.cases = new ArrayList<>();
             for (JsonNode caseNode : rootNode.get("Cases")) {
-                 config.cases.add(caseNode.get("Fqn").asText());
+                if (caseNode.get("Fqn") != null)
+                    config.cases.add(caseNode.get("Fqn").asText());
+                else if (caseNode.get("Details") != null) {
+                    if (caseNode.get("Details").get("FullyQualifiedName") != null)
+                        config.cases.add(caseNode.get("Details").get("FullyQualifiedName").asText());
+                }
             }
         }
 

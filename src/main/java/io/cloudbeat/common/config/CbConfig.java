@@ -6,6 +6,7 @@ import java.util.Properties;
 import java.util.Set;
 
 public class CbConfig {
+    public static final String DEFAULT_WEBDRIVER_URL = "http://localhost:4444/wd/hub";
     public static final String CB_API_KEY = "CB_API_KEY";
     public static final String CB_API_ENDPOINT_URL = "CB_API_ENDPOINT_URL";
     public static final String CB_PROJECT_ID = "CB_PROJECT_ID";
@@ -101,4 +102,6 @@ public class CbConfig {
     public String getInstanceId() { return instanceId; }
 
     public String getRunId() { return runId; }
+
+    public String getSeleniumUrl() { return seleniumUrl; }
 }
