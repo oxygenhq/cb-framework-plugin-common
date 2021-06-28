@@ -24,6 +24,7 @@ public class StepResult {
     StepResult parentStep = null;
     ArrayList<StepResult> steps = new ArrayList<>();
     Map<String, Number> stats = new HashMap<>();
+    ArrayList<LogMessage> logs = new ArrayList<>();
 
     public StepResult(String name) {
         this.id = UUID.randomUUID().toString();
@@ -57,6 +58,10 @@ public class StepResult {
         newSubStep.parentStep = this;
         steps.add(newSubStep);
         return newSubStep;
+    }
+
+    public void addLogMessage(final LogMessage logMessage) {
+        this.logs.add(logMessage);
     }
 
     private TestStatus calculateStepStatus() {
@@ -93,4 +98,6 @@ public class StepResult {
     public Map<String, Number> getStats() { return stats; }
 
     public FailureResult getFailure() { return failure; }
+
+    public List<LogMessage> getLogs() { return logs; }
 }

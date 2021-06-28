@@ -20,7 +20,7 @@ public class CaseResult {
     TestStatus status;
     FailureResult failure;
     ArrayList<StepResult> steps = new ArrayList<>();
-    ArrayList<StepResult> logs = new ArrayList<>();
+    ArrayList<LogMessage> logs = new ArrayList<>();
 
     public CaseResult(String name) {
         this.id = UUID.randomUUID().toString();
@@ -52,6 +52,10 @@ public class CaseResult {
         StepResult newStep;
         steps.add(newStep = new StepResult(name));
         return newStep;
+    }
+
+    public void addLogMessage(final LogMessage logMessage) {
+        this.logs.add(logMessage);
     }
 
     private TestStatus calculateCaseStatus() {
@@ -105,4 +109,6 @@ public class CaseResult {
     public List<StepResult> getSteps() {
         return steps;
     }
+
+    public List<LogMessage> getLogs() { return logs; }
 }

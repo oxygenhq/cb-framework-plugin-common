@@ -239,6 +239,45 @@ public class CbTestReporter {
         return new WebDriverWrapper(this);
     }
 
+    public void logMessage(LogMessage logMessage) {
+        if (logMessage == null)
+            return;
+        // define were to add the log: current step, current case or current suite
+        if (lastStep != null)
+            lastStep.addLogMessage(logMessage);
+        else if (lastCase != null)
+            lastCase.addLogMessage(logMessage);
+        else if (lastSuite != null)
+            lastSuite.addLogMessage(logMessage);
+        //else
+        //    result.add
+    }
+
+    public void logInfo(final String message) {
+
+    }
+
+    public void logWarning(final String message) {
+
+    }
+
+    public void logError(final String message) {
+        logError(message, null);
+    }
+    public void logError(Throwable error) {
+        logError(null, error);
+    }
+
+    public void logError(final String message, Throwable error) {
+        final LogMessage logMessage = new LogMessage();
+        logMessage.setMessage(message);
+        if (error != null)
+            logMessage.setFailure(new FailureResult(error));
+        logMessage.setLevel(LogLevel.ERROR.value());
+        logMessage(logMessage);
+
+    }
+
     /*
     private void loadConfig() {
         String payloadpath = System.getProperty("payloadpath");;
@@ -261,19 +300,6 @@ public class CbTestReporter {
         // TODO: make sure we throw an exception or handle in some other way the situation
         // where no configuration parameters where provided (e.g. when user runs test outside CB environment)
     }*/
-
-    private void logError(String message) {
-        System.err.println("[CloudBeat] " + message);
-    }
-
-    private void logError(String message, Exception e) {
-        System.err.println("[CloudBeat] " + message);
-        e.printStackTrace();
-    }
-
-    private void logInfo(String message) {
-        System.out.println("[CloudBeat] " + message);
-    }
 
     private void addSystemAttributes() {
         result.addAttribute("agent.hostname", getHostName());

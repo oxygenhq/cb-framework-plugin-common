@@ -20,6 +20,7 @@ public class SuiteResult {
     TestStatus status;
     ArrayList<String> args;
     ArrayList<CaseResult> cases = new ArrayList<>();
+    ArrayList<LogMessage> logs = new ArrayList<>();
 
     public SuiteResult(String name) {
         this.id = UUID.randomUUID().toString();
@@ -40,6 +41,10 @@ public class SuiteResult {
         CaseResult newCase = new CaseResult(name);
         cases.add(newCase);
         return newCase;
+    }
+
+    public void addLogMessage(final LogMessage logMessage) {
+        this.logs.add(logMessage);
     }
 
     public Optional<CaseResult> lastCase(String fqn) {
@@ -91,4 +96,6 @@ public class SuiteResult {
     public List<CaseResult> getCases() {
         return cases;
     }
+
+    public List<LogMessage> getLogs() { return logs; }
 }
