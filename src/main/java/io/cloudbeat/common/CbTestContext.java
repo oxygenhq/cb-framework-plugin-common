@@ -50,7 +50,7 @@ public class CbTestContext {
             }
         }
         catch (IOException e) {
-
+            System.err.println("Failed to initialize CbTestContext: " + e.toString());
         }
         CURRENT_CONTEXT.set(this);
     }

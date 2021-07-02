@@ -106,6 +106,9 @@ public class CbTestReporter {
     }
 
     public void startSuite(final String name, final String fqn) {
+        // do not add the same suite twice
+        if (Objects.nonNull(fqn) && result.lastSuite(fqn).isPresent())
+            return;
         final SuiteResult suite = result.addNewSuite(name);
         suite.setFqn(fqn);
     }
@@ -116,10 +119,19 @@ public class CbTestReporter {
         });
     }
 
+    public void endLastSuite() {
+        result.lastSuite().ifPresent(suite -> {
+            suite.end();
+        });
+    }
+
     public void startCase(final String name, final String fqn, final String suiteFqn) throws Exception {
         SuiteResult suiteResult = result.lastSuite(suiteFqn).orElseThrow(
                 () -> new Exception("No started suite was found. You must call startSuite first.")
         );
+        // do not add the same case twice
+        if (Objects.nonNull(fqn) && suiteResult.lastCase(fqn).isPresent())
+            return;
         CaseResult caseResult = suiteResult.addNewCaseResult(name);
         caseResult.setFqn(fqn);
         this.lastCase = caseResult;
@@ -146,7 +158,7 @@ public class CbTestReporter {
         endCase(caseFqn, TestStatus.FAILED, exception);
     }
 
-    public void skipCase(final String caseFqn, final String suiteFqn) throws Exception {
+    public void skipCase(final String caseFqn) throws Exception {
         endCase(caseFqn, TestStatus.SKIPPED, null);
     }
 
@@ -323,4 +335,5 @@ public class CbTestReporter {
     public StepResult getLastStep() {
         return lastStep;
     }
+
 }
