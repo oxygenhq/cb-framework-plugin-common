@@ -64,6 +64,18 @@ public class StepResult {
         this.logs.add(logMessage);
     }
 
+    public void addLogs(final List<LogMessage> logs) {
+        this.logs.addAll(logs);
+    }
+
+    public void addStats(final Map<String, Number> newStats) {
+        newStats.keySet().forEach(statName -> {
+            if (this.stats.containsKey(statName))
+                return;     // do not override existing stats
+            this.stats.put(statName, newStats.get(statName));
+        });
+    }
+
     private TestStatus calculateStepStatus() {
         if (failure != null)
             return TestStatus.FAILED;

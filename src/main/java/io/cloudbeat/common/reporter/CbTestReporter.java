@@ -197,9 +197,15 @@ public class CbTestReporter {
     }
 
     public void passStep(final String stepId, Map<String, Number> stats) {
+        passStep(stepId, stats, null);
+    }
+
+    public void passStep(final String stepId, Map<String, Number> stats, List<LogMessage> logs) {
         final StepResult step = endStep(stepId, TestStatus.PASSED, null);
         if (stats != null)
-            step.setStats(stats);
+            step.addStats(stats);
+        if (logs != null)
+            step.addLogs(logs);
     }
 
     public void failStep(final String name, Throwable throwable) {

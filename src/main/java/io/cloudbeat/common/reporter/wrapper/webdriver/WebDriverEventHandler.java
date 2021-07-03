@@ -2,22 +2,38 @@ package io.cloudbeat.common.reporter.wrapper.webdriver;
 
 import io.cloudbeat.common.reporter.CbTestReporter;
 import io.cloudbeat.common.reporter.model.FailureResult;
+import io.cloudbeat.common.reporter.model.LogMessage;
+import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
+import org.openqa.selenium.logging.LogEntries;
+import org.openqa.selenium.logging.LogEntry;
+import org.openqa.selenium.logging.LogType;
 import org.openqa.selenium.support.events.WebDriverEventListener;
 
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class WebDriverEventHandler implements WebDriverEventListener {
 
-    private CbTestReporter reporter;
+    private final CbTestReporter reporter;
+    private final WebDriver webDriver;
     private final Hashtable<Integer, String> elementHash = new Hashtable();
     private String lastStepId = null;
+    private final boolean isWeb;
+    private final boolean isMobile;
+    private final boolean isAndroid;
 
-    public WebDriverEventHandler(CbTestReporter reporter)
+    public WebDriverEventHandler(CbTestReporter reporter, WebDriver webDriver)
     {
         this.reporter = reporter;
+        this.webDriver = webDriver;
+        // identify if the provided webdriver is of mobile or web type
+        Capabilities caps = ((HasCapabilities) webDriver).getCapabilities();
+        isWeb = StringUtils.isNotEmpty(caps.getBrowserName());
+        isMobile = caps.getPlatform() != null && (
+                caps.getPlatform().name().equalsIgnoreCase("android") ||
+                caps.getPlatform().name().equalsIgnoreCase("ios"));
+        isAndroid = caps.getPlatform() != null && caps.getPlatform().name().equalsIgnoreCase("android");
     }
 
     @Override
@@ -53,19 +69,15 @@ public class WebDriverEventHandler implements WebDriverEventListener {
             return;
 
         String stepName = "Navigate to " + s;
-        JavascriptExecutor js = (JavascriptExecutor)webDriver;
 
-        long loadEvent = (long) js.executeScript("return (window.performance.timing.loadEventEnd - window.performance.timing.loadEventStart)");
-        long domContentLoadedEvent = (long) js.executeScript("return (window.performance.timing.domContentLoadedEventEnd - window.performance.timing.domContentLoadedEventStart)");
+        // get navigation timing metrics
+        final Map<String, Number> stats = getNavigationTimingStats(webDriver);
 
-        System.out.println("Load event time:" + loadEvent);
-        System.out.println("Dom content load event time:" + domContentLoadedEvent);
+        // get browser or device logs
+        final List<LogMessage> logs = collectLogs(webDriver);
 
-        Map<String, Number> stats = new HashMap<>();
-        stats.put("loadEvent", loadEvent);
-        stats.put("domContentLoadedEvent", domContentLoadedEvent);
+        reporter.passStep(lastStepId, stats, logs.size() == 0 ? null : logs);
 
-        reporter.passStep(lastStepId, stats);
         lastStepId = null;
     }
 
@@ -122,7 +134,10 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void afterClickOn(final WebElement webElement, final WebDriver webDriver) {
-        reporter.passStep(lastStepId);
+        // get navigation timing metrics
+        final Map<String, Number> stats = getNavigationTimingStats(webDriver);
+
+        reporter.passStep(lastStepId, stats);
         lastStepId = null;
     }
 
@@ -233,5 +248,49 @@ public class WebDriverEventHandler implements WebDriverEventListener {
         else {
             return String.format("<%s>", tagName);
         }
+    }
+
+    private List<LogMessage> collectLogs(final WebDriver webDriver) {
+        ArrayList<LogMessage> logs = new ArrayList<>();
+        if (isWeb)
+            collectLogs(logs, webDriver, LogType.BROWSER);
+        if (isAndroid)
+            collectLogs(logs, webDriver, "logcat");
+
+        return logs;
+    }
+
+    private void collectLogs(final List<LogMessage> logMessages, final WebDriver webDriver, final String logType) {
+        final LogEntries logEntries = webDriver.manage().logs().get(logType);
+        logEntries.forEach(logEntry -> logMessages.add(toLogMessage(logEntry)));
+    }
+
+    private static LogMessage toLogMessage(LogEntry logEntry) {
+        LogMessage logMessage = new LogMessage();
+        logMessage.setMessage(logEntry.getMessage());
+        logMessage.setLevel(logEntry.getLevel().getName());
+        logMessage.setTimestamp(logEntry.getTimestamp());
+
+        return logMessage;
+    }
+
+    private Map<String, Number> getNavigationTimingStats(WebDriver webDriver) {
+        // navigation timing is relevant only for browser based tests
+        if (!isWeb)
+            return null;
+
+        JavascriptExecutor js = (JavascriptExecutor)webDriver;
+        long loadEvent = (long) js.executeScript("return (window.performance.timing.loadEventEnd - window.performance.timing.loadEventStart)");
+        long domContentLoadedEvent = (long) js.executeScript("return (window.performance.timing.domContentLoadedEventEnd - window.performance.timing.domContentLoadedEventStart)");
+
+        Map<String, Number> stats = new HashMap<>();
+        if (loadEvent > 0)
+            stats.put("loadEvent", loadEvent);
+        if (domContentLoadedEvent > 0)
+            stats.put("domContentLoadedEvent", domContentLoadedEvent);
+        // return null if both loadEvent and domContentLoadedEvent are 0
+        if (stats.keySet().size() > 0)
+            return stats;
+        return null;
     }
 }

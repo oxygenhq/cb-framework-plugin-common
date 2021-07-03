@@ -16,10 +16,15 @@ public class WebDriverWrapper {
         this.reporter = reporter;
     }
 
-    public EventFiringWebDriver wrap(WebDriver driver) {
-        EventFiringWebDriver eventDriver = new EventFiringWebDriver(driver);
-        WebDriverEventHandler handler = new WebDriverEventHandler(this.reporter);
+    public EventFiringWebDriver wrap(WebDriver webDriver) {
+        EventFiringWebDriver eventDriver = new EventFiringWebDriver(webDriver);
+        WebDriverEventHandler handler = new WebDriverEventHandler(this.reporter, webDriver);
         eventDriver.register(handler);
         return eventDriver;
+    }
+
+    public void wrap(EventFiringWebDriver eventFiringWebDriver) {
+        WebDriverEventHandler handler = new WebDriverEventHandler(this.reporter, eventFiringWebDriver);
+        eventFiringWebDriver.register(handler);
     }
 }

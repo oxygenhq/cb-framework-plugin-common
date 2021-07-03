@@ -1,5 +1,6 @@
 package io.cloudbeat.common.reporter.model;
 
+import io.cloudbeat.common.CbTestContext;
 import io.cloudbeat.common.Helper;
 
 import java.io.PrintWriter;
@@ -20,16 +21,13 @@ public class FailureResult {
         type = FAILURE_TYPE;
         this.message = message;
     }
-
+    
     public FailureResult(Throwable throwable) {
-        this(throwable, null);
-    }
-
-    public FailureResult(Throwable throwable, String testPackageName) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         throwable.printStackTrace(pw);
         String stackTrace = sw.toString();
+        final String testPackageName = getTestPackageName();
         StackTraceElement[] filteredStackTrace =
                 Helper.getStackTraceStartingFromPackage(throwable.getStackTrace(), testPackageName);
         this.subtype = throwable.getClass().getSimpleName();
@@ -44,6 +42,13 @@ public class FailureResult {
         if (filteredStackTrace.length > 0) {
             this.location = filteredStackTrace[0].toString();
         }
+    }
+
+    private static String getTestPackageName() {
+        CbTestContext ctx = CbTestContext.getInstance();
+        if (ctx != null && ctx.isActive() && ctx.getCurrentTestClass() != null)
+            return ctx.getCurrentTestClass().getPackage().getName();
+        return null;
     }
 
     public String getType() {

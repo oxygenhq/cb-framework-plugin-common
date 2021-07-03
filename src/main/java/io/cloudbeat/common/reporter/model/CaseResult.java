@@ -74,7 +74,7 @@ public class CaseResult {
     }
 
     public void setFailure(Throwable exception) {
-        failure = new FailureResult(exception, fqn);
+        failure = new FailureResult(exception);
     }
 
     /* Getters */

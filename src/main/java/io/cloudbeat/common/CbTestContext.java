@@ -39,6 +39,7 @@ public class CbTestContext {
     private CbTestReporter reporter;
     private CbConfig config;
     private boolean isActive;
+    private Class currentTestClass;
 
     public CbTestContext() {
         isActive = false;
@@ -65,11 +66,15 @@ public class CbTestContext {
         return CURRENT_CONTEXT.get();
     }
 
+    public void setCurrentTestClass(Class testClass) { this.currentTestClass = testClass; }
+
     public CbTestReporter getReporter() {
         return this.reporter;
     }
 
     public CbConfig getConfig() { return config; }
+
+    public Class getCurrentTestClass() { return currentTestClass; }
 
     public boolean isActive() { return isActive; }
 }
