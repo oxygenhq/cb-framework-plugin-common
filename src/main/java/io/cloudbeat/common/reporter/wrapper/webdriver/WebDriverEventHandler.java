@@ -5,6 +5,7 @@ import io.cloudbeat.common.reporter.model.FailureResult;
 import io.cloudbeat.common.reporter.model.LogMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.logging.LogEntries;
 import org.openqa.selenium.logging.LogEntry;
 import org.openqa.selenium.logging.LogType;
@@ -22,6 +23,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
     private final boolean isWeb;
     private final boolean isMobile;
     private final boolean isAndroid;
+    private final boolean isChrome;
+    private final boolean isPerformanceLoggingOn;
 
     public WebDriverEventHandler(CbTestReporter reporter, WebDriver webDriver)
     {
@@ -34,6 +37,20 @@ public class WebDriverEventHandler implements WebDriverEventListener {
                 caps.getPlatform().name().equalsIgnoreCase("android") ||
                 caps.getPlatform().name().equalsIgnoreCase("ios"));
         isAndroid = caps.getPlatform() != null && caps.getPlatform().name().equalsIgnoreCase("android");
+        isChrome = isChromeDriver(webDriver);
+        isPerformanceLoggingOn = isPerformanceLoggingOn(webDriver);
+    }
+
+    private static boolean isChromeDriver(WebDriver webDriver) {
+        if (webDriver instanceof ChromeDriver)
+            return true;
+        Capabilities caps = ((HasCapabilities) webDriver).getCapabilities();
+        return StringUtils.isNotEmpty(caps.getBrowserName()) && caps.getBrowserName().equalsIgnoreCase("chrome");
+    }
+
+    private static boolean isPerformanceLoggingOn(WebDriver webDriver) {
+        Capabilities caps = ((HasCapabilities) webDriver).getCapabilities();
+        return caps.getCapability("goog:loggingPrefs") != null;
     }
 
     @Override
@@ -76,9 +93,26 @@ public class WebDriverEventHandler implements WebDriverEventListener {
         // get browser or device logs
         final List<LogMessage> logs = collectLogs(webDriver);
 
+        collectPerformanceData(webDriver);
+
         reporter.passStep(lastStepId, stats, logs.size() == 0 ? null : logs);
 
         lastStepId = null;
+    }
+
+    private void collectPerformanceData(WebDriver webDriver) {
+        //if (isChrome && isPerformanceLoggingOn)
+
+        /*ArrayList<Object> results = (ArrayList<Object>) ((JavascriptExecutor)webDriver).executeScript(
+                //"return window.performance.getEntries();");
+                "return await chrome.devtools.network.getHAR();");
+        results.forEach((url)->System.out.println(url.toString()));*/
+
+        /*boolean hasPerformanceLogs = webDriver.manage().logs().getAvailableLogTypes()
+                .stream().anyMatch(t -> t.equals("performance"));
+        if (!hasPerformanceLogs)
+            return;
+        LogEntries perfLogs = webDriver.manage().logs().get("performance");*/
     }
 
     @Override
