@@ -50,8 +50,12 @@ public class TestResult {
 
     public void end(TestStatus status) {
         endTime = Calendar.getInstance().getTime().getTime();
-        this.duration = startTime - endTime;
+        this.duration = endTime - startTime;
         this.status = status;
+    }
+
+    public void end() {
+        this.end(this.calculateFinalTestResultStatus());
     }
 
     public SuiteResult addNewSuite(final String name) {
@@ -120,5 +124,15 @@ public class TestResult {
 
     public TestStatus getStatus() {
         return status;
+    }
+
+    private TestStatus calculateFinalTestResultStatus() {
+        boolean hasFailedSuites = suites.stream().anyMatch(s -> s.status == TestStatus.FAILED);
+        boolean allSkipped = suites.stream().allMatch(s -> s.status == TestStatus.SKIPPED);
+        if (hasFailedSuites)
+            return TestStatus.FAILED;
+        if (allSkipped)
+            return TestStatus.SKIPPED;
+        return TestStatus.PASSED;
     }
 }
