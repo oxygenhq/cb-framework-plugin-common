@@ -117,4 +117,6 @@ public class StepResult {
     public FailureResult getFailure() { return failure; }
 
     public List<LogMessage> getLogs() { return logs; }
+
+    public String getScreenShot() { return screenShot; }
 }
