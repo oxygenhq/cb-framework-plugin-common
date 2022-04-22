@@ -125,8 +125,8 @@ public class CbTestReporter {
                 () -> new Exception("No started suite was found. You must call startSuite first.")
         );
         // do not add the same case twice
-        if (Objects.nonNull(fqn) && suiteResult.lastCase(fqn).isPresent())
-            return;
+        //if (Objects.nonNull(fqn) && suiteResult.lastCase(fqn).isPresent())
+        //    return;
         CaseResult caseResult = suiteResult.addNewCaseResult(name);
         caseResult.setFqn(fqn);
         this.lastCase = caseResult;
@@ -141,8 +141,18 @@ public class CbTestReporter {
         if (!lastCase.getFqn().equals(caseFqn))
             throw new Exception("Cannot find started case: " + caseFqn);
 
+        closeOpenSteps();
         lastCase.end(status, throwable);
         lastCase = null;
+        lastStep = null;
+    }
+
+    private void closeOpenSteps() {
+        // if the case is ended due to error, there might be open steps that need to be closed
+        while (lastStep != null) {
+            lastStep.end();
+            lastStep = lastStep.getParentStep();
+        }
     }
 
     public void passCase(final String caseFqn) throws Exception {

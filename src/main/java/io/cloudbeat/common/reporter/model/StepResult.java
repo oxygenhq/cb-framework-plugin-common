@@ -46,7 +46,7 @@ public class StepResult {
         end(null, throwable);
     }
 
-    public void end(TestStatus status, Throwable throwable) { end(status, throwable); }
+    public void end(TestStatus status, Throwable throwable) { end(status, throwable, null); }
 
     public void end(TestStatus status, Throwable throwable, String screenshot) {
         this.endTime = Calendar.getInstance().getTimeInMillis();
