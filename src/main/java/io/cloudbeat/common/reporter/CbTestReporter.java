@@ -204,13 +204,18 @@ public class CbTestReporter {
     }
 
     public void failStep(final String name, Throwable throwable) {
-        failStep(name, null, throwable);
+        failStep(name, throwable, null);
     }
-    public void failStep(final String stepId, Map<String, Number> stats, Throwable throwable) {
-        endStep(stepId, TestStatus.FAILED, throwable);
+
+    public void failStep(final String stepId, Throwable throwable, String screenshot) {
+        endStep(stepId, TestStatus.FAILED, throwable, screenshot);
     }
 
     public StepResult endStep(final String stepId, TestStatus status, Throwable throwable) {
+        return endStep(stepId, status, throwable, null);
+    }
+
+    public StepResult endStep(final String stepId, TestStatus status, Throwable throwable, String screenshot) {
         if (lastStep == null || stepId == null)
             return null;
         LinkedList<StepResult> stepStack = new LinkedList<>();
@@ -227,7 +232,7 @@ public class CbTestReporter {
         if (!stepFound)
             return null;
         final StepResult endedStep = stepStack.pop();
-        endedStep.end(status, throwable);
+        endedStep.end(status, throwable, screenshot);
         lastStep = endedStep.getParentStep();
         // make sure to end all children/parent steps, if they remain open
         stepStack.stream().forEach((step) -> {

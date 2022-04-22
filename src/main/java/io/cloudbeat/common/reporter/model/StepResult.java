@@ -20,6 +20,8 @@ public class StepResult {
     String fqn;
     List<String> args;
     FailureResult failure;
+
+    String screenShot;
     @JsonIgnore
     StepResult parentStep = null;
     ArrayList<StepResult> steps = new ArrayList<>();
@@ -44,9 +46,12 @@ public class StepResult {
         end(null, throwable);
     }
 
-    public void end(TestStatus status, Throwable throwable) {
+    public void end(TestStatus status, Throwable throwable) { end(status, throwable); }
+
+    public void end(TestStatus status, Throwable throwable, String screenshot) {
         this.endTime = Calendar.getInstance().getTimeInMillis();
         this.duration = endTime - startTime;
+        this.screenShot = screenshot;
         if (throwable != null)
             this.failure = new FailureResult(throwable);
         // calculate status automatically or force the provided status

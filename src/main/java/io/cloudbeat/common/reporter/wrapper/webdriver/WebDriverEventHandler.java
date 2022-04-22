@@ -221,8 +221,21 @@ public class WebDriverEventHandler implements WebDriverEventListener {
     @Override
     public void onException(final Throwable throwable, final WebDriver webDriver) {
         //final FailureResult failureModel = new FailureResult(throwable, this.reporter.getCurrentTestPackageName());
-        if (lastStepId != null)
-            reporter.failStep(lastStepId, throwable);
+        if (lastStepId != null) {
+            // try to take a screenshot
+            String screenshot = getScreenshot(webDriver);
+            reporter.failStep(lastStepId, throwable, screenshot);
+        }
+    }
+
+    private String getScreenshot(final WebDriver webDriver) {
+        if (webDriver instanceof TakesScreenshot) {
+            try {
+                return ((TakesScreenshot) webDriver).getScreenshotAs(OutputType.BASE64);
+            }
+            catch (Exception e) {}
+        }
+        return null;
     }
 
     @Override
