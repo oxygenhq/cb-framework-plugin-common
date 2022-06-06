@@ -253,6 +253,10 @@ public class CbTestReporter {
     }
 
     public void step(final String name, Runnable stepFunc) {
+        step(name, stepFunc, false);
+    }
+
+    public void step(final String name, Runnable stepFunc, boolean continueOnError) {
         final String stepId = startStep(name);
         try {
             stepFunc.run();
@@ -260,6 +264,8 @@ public class CbTestReporter {
         }
         catch (Throwable e) {
             failStep(stepId, e);
+            if (!continueOnError)
+                throw e;
         }
     }
 
@@ -350,6 +356,10 @@ public class CbTestReporter {
 
     public StepResult getLastStep() {
         return lastStep;
+    }
+
+    public CaseResult getLastCase() {
+        return lastCase;
     }
 
 }
