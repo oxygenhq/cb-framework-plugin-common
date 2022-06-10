@@ -58,6 +58,13 @@ public class CbTestReporter {
             result.addAttribute("framework.version", frameworkVersion);
         }
     }
+    public SuiteResult getSuiteResult(final String fqn) {
+        return result.lastSuite(fqn).orElse(null);
+    }
+
+    public TestResult getResult() {
+        return  result;
+    }
 
     public void startInstance() {
         // ignore this call if instance has been already initialized
@@ -134,6 +141,9 @@ public class CbTestReporter {
 
     public void endCase(final String caseFqn) throws Exception {
         endCase(caseFqn, null, null);
+    }
+    public void endCase(final String caseFqn, final Throwable throwable) throws Exception {
+        endCase(caseFqn, null, throwable);
     }
     public void endCase(final String caseFqn, final TestStatus status, final Throwable throwable) throws Exception {
         if (lastCase == null || lastCase.getFqn() == null)
@@ -309,7 +319,6 @@ public class CbTestReporter {
             logMessage.setFailure(new FailureResult(error));
         logMessage.setLevel(LogLevel.ERROR.value());
         logMessage(logMessage);
-
     }
 
     /*
