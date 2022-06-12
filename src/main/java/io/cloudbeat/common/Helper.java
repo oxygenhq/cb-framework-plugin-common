@@ -70,9 +70,17 @@ public class Helper {
     public static DesiredCapabilities castMapToDesiredCapabilities(Map<String, String> capsMap) {
         final DesiredCapabilities capabilities = new DesiredCapabilities();
         // filter out "technologyName" capability as it's internal in CB and not part of Web Driver standard
-        capsMap.keySet().stream().filter((key) -> key != "technologyName").forEach((key) -> capabilities.setCapability(key, capsMap.get(key)));
+        capsMap.keySet().stream().filter((key) -> key != "technologyName").forEach((key) -> capabilities.setCapability(key, lowerCaseIfBrowserName(key, capsMap.get(key))));
 
         return capabilities;
+    }
+
+    private static String lowerCaseIfBrowserName(String key, String value) {
+        // in some cases, CB engine can pass upper-cased browserName value
+        // make sure we always send a lower case value back to the web driver
+        if (key == "browserName" && value != null)
+            return value.toLowerCase();
+        return value;
     }
 
     public static DesiredCapabilities mergeUserAndCloudbeatCapabilities(DesiredCapabilities extraCapabilities) {
