@@ -69,7 +69,8 @@ public class Helper {
 
     public static DesiredCapabilities castMapToDesiredCapabilities(Map<String, String> capsMap) {
         final DesiredCapabilities capabilities = new DesiredCapabilities();
-        capsMap.keySet().stream().forEach((key) -> capabilities.setCapability(key, capsMap.get(key)));
+        // filter out "technologyName" capability as it's internal in CB and not part of Web Driver standard
+        capsMap.keySet().stream().filter((key) -> key != "technologyName").forEach((key) -> capabilities.setCapability(key, capsMap.get(key)));
 
         return capabilities;
     }
