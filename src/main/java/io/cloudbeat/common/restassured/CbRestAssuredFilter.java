@@ -32,13 +32,17 @@ public class CbRestAssuredFilter implements OrderedFilter {
         if (Objects.nonNull(requestSpec.getBody())) {
             requestBody = prettifier.getPrettifiedBodyIfPossible(requestSpec);
         }
+        // start step
+        final String stepId = ctx.getReporter().startStep(stepName);
+        // get a response
         final Response response = filterContext.next(requestSpec, responseSpec);
+        // extract response properties
         final String statusText = response.getStatusLine();
         final int statusCode = response.getStatusCode();
         final String responseBody = prettifier.getPrettifiedBodyIfPossible(response, response.getBody());
         final Map<String, String> responseHeaders = toMap(response.getHeaders());
         final String stepName = String.format("%s %s", method, url);
-        final String stepId = ctx.getReporter().startStep(stepName);
+        // end step
         ctx.getReporter().endStep(stepId);
         return response;
     }
