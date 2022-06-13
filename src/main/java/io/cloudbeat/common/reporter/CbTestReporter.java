@@ -231,6 +231,9 @@ public class CbTestReporter {
         endStep(stepId, TestStatus.FAILED, throwable, screenshot);
     }
 
+    public StepResult endStep(final String stepId) {
+        return endStep(stepId, TestStatus.PASSED, null);
+    }
     public StepResult endStep(final String stepId, TestStatus status, Throwable throwable) {
         return endStep(stepId, status, throwable, null);
     }

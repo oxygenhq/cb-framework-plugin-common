@@ -6,7 +6,6 @@ import io.cloudbeat.common.reporter.model.FailureResult;
 import io.cloudbeat.common.reporter.model.LogEntryResult;
 import io.cloudbeat.common.reporter.wrapper.webdriver.WebDriverEventHandler;
 import io.cloudbeat.common.restassured.RestAssuredFailureListener;
-import io.cloudbeat.common.restassured.RestAssuredRequestLogger;
 import io.restassured.RestAssured;
 import io.restassured.config.FailureConfig;
 import org.apache.commons.lang3.StringUtils;
@@ -69,9 +68,10 @@ public abstract class CloudBeatTest {
     }
 
     public void setupRestAssured() {
-        RestAssured.filters(new RestAssuredRequestLogger(this));
+        /*RestAssured.filters(new RestAssuredRequestLogger(this));
         RestAssured.config = RestAssured.config()
                 .failureConfig(FailureConfig.failureConfig().with().failureListeners(new RestAssuredFailureListener(this)));
+         */
     }
 
     public WebDriver setupWebDriver() throws Exception {
