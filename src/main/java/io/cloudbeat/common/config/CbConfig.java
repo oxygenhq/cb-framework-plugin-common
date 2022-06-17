@@ -26,7 +26,7 @@ public class CbConfig {
     String seleniumUrl;
     String appiumUrl;
     Map<String, String> metadata;
-    Map<String, String> capabilities;
+    Map<String, Object> capabilities;
     Map<String, String> envVars;
     Map<String, String> options;
     List<String> tags;
@@ -63,7 +63,7 @@ public class CbConfig {
         runId = props.getProperty(CB_RUN_ID);
         instanceId = props.getProperty(CB_INSTANCE_ID);
         // load capabilities
-        loadMapFromPrefixedProps(CB_CAPS_PREFIX, capabilities);
+        loadMapFromPrefixedCaps(CB_CAPS_PREFIX, capabilities);
         // load metadata
         loadMapFromPrefixedProps(CB_META_PREFIX, metadata);
         // load options
@@ -73,6 +73,16 @@ public class CbConfig {
     }
 
     private void loadMapFromPrefixedProps(String prefix, Map<String, String> map) {
+        final Set<String> propertyNames = props.stringPropertyNames();
+        propertyNames.stream()
+                .filter(name -> name.startsWith(prefix))
+                .forEach(name -> {
+                    final String noPrefixPropName = name.substring(prefix.length());
+                    final String propVal = props.getProperty(name);
+                    this.capabilities.put(noPrefixPropName, propVal);
+                });
+    }
+    private void loadMapFromPrefixedCaps(String prefix, Map<String, Object> map) {
         final Set<String> propertyNames = props.stringPropertyNames();
         propertyNames.stream()
             .filter(name -> name.startsWith(prefix))
@@ -87,7 +97,7 @@ public class CbConfig {
         return props;
     }
 
-    public Map<String, String> getCapabilities() { return capabilities; }
+    public Map<String, Object> getCapabilities() { return capabilities; }
 
     public Map<String, String> getMetadata() { return metadata; }
 
@@ -104,4 +114,7 @@ public class CbConfig {
     public String getRunId() { return runId; }
 
     public String getSeleniumUrl() { return seleniumUrl; }
+    public String getAppiumUrl() { return seleniumUrl; }
+
+    public String getSeleniumOrAppiumUrl() { return seleniumUrl != null && seleniumUrl.length() > 0 ? seleniumUrl : appiumUrl; }
 }

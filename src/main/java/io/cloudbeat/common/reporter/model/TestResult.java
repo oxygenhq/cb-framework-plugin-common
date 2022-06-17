@@ -15,7 +15,7 @@ public class TestResult {
     long endTime;
     long duration;
     Map<String, String> options;
-    Map<String, String> capabilities;
+    Map<String, Object> capabilities;
     //Map<String, String> attributes = new HashMap<>();
     Map<String, String> metaData;
     Map<String, String> environmentVariables;
@@ -31,7 +31,7 @@ public class TestResult {
     public TestResult(
             final String runId,
             final String instanceId,
-            final Map<String, String> capabilities,
+            final Map<String, Object> capabilities,
             final Map<String, String> options,
             final Map<String, String> metaData,
             final Map<String, String> environmentVariables
@@ -106,7 +106,7 @@ public class TestResult {
         return options;
     }
 
-    public Map<String, String> getCapabilities() {
+    public Map<String, Object> getCapabilities() {
         return capabilities;
     }
 

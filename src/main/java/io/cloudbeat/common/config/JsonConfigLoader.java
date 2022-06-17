@@ -1,6 +1,8 @@
 package io.cloudbeat.common.config;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -14,6 +16,11 @@ import java.util.List;
 import java.util.Map;
 
 public final class JsonConfigLoader {
+    private static final String SELENIUM_URL_KEY = "seleniumUrl";
+    private static final String APPIUM_URL_KEY = "appiumUrl";
+    final static TypeReference<Map<String, Object>> mapTypeRef = new TypeReference<Map<String, Object>>() {};
+    final static TypeReference<Map<String, String>> mapStringTypeRef = new TypeReference<Map<String, String>>() {};
+    final static TypeReference<List<String>> listStringTypeRef = new TypeReference<List<String>>() {};
     public static CbConfig load(String path) throws IOException {
         byte[] encoded = Files.readAllBytes(Paths.get(path));
         String json = new String(encoded, StandardCharsets.UTF_8);
@@ -22,14 +29,11 @@ public final class JsonConfigLoader {
 
         final ObjectMapper mapper = new ObjectMapper();
         JsonNode rootNode = mapper.readValue(json, JsonNode.class);
-        TypeReference<Map<String, Object>> mapTypeRef = new TypeReference<Map<String, Object>>() {};
-        TypeReference<Map<String, String>> mapStringTypeRef = new TypeReference<Map<String, String>>() {};
-        TypeReference<List<String>> listStringTypeRef = new TypeReference<List<String>>() {};
-
         config.runId = rootNode.get("RunId").textValue();
         config.instanceId = rootNode.get("InstanceId").textValue();
         config.instanceId = rootNode.get("InstanceId").textValue();
         config.capabilities = mapper.readValue(rootNode.get("Capabilities").toString(), mapTypeRef);
+        mapFoldedCapabilities(config.capabilities, mapper);
         config.metadata = mapper.readValue(rootNode.get("Metadata").toString(), mapTypeRef);
         config.envVars = mapper.readValue(rootNode.get("EnvironmentVariables").toString(), mapTypeRef);
         config.options = mapper.readValue(rootNode.get("Options").toString(), mapStringTypeRef);
@@ -46,7 +50,27 @@ public final class JsonConfigLoader {
                 }
             }
         }
+        // set seleniumUrl, if specified
+        if (config.metadata != null && config.metadata.containsKey(SELENIUM_URL_KEY))
+            config.seleniumUrl = config.metadata.get(SELENIUM_URL_KEY);
+        // set appiumUrl, if specified
+        if (config.metadata != null && config.metadata.containsKey(APPIUM_URL_KEY))
+            config.appiumUrl = config.metadata.get(APPIUM_URL_KEY);
 
         return config;
+    }
+
+    private static void mapFoldedCapabilities(Map<String, Object> caps, ObjectMapper mapper) {
+        caps.forEach((key, value) -> {
+            if (key.endsWith(":options") && value != null && value instanceof String && value.toString().startsWith("{")) {
+                try {
+                    Map<String, Object> options = mapper.readValue(value.toString(), mapTypeRef);
+                    caps.replace(key, options);
+                }
+                catch (Exception e) {
+
+                }
+            }
+        });
     }
 }

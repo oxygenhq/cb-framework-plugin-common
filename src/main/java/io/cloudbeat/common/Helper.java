@@ -8,6 +8,7 @@ import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -67,20 +68,29 @@ public class Helper {
         return Arrays.stream(stackTrace).map(call -> call.toString()).toArray(String[]::new);
     }
 
-    public static DesiredCapabilities castMapToDesiredCapabilities(Map<String, String> capsMap) {
+    public static DesiredCapabilities castMapToDesiredCapabilities(Map<String, Object> capsMap) {
         final DesiredCapabilities capabilities = new DesiredCapabilities();
         // filter out "technologyName" capability as it's internal in CB and not part of Web Driver standard
-        capsMap.keySet().stream().filter((key) -> key != "technologyName").forEach((key) -> capabilities.setCapability(key, lowerCaseIfBrowserName(key, capsMap.get(key))));
+        capsMap.keySet().stream()
+                .filter((key) -> key != "technologyName")
+                .forEach(
+                        (key) -> {
+                            if (capsMap.get(key) instanceof LinkedHashMap)
+                                capabilities.setCapability(key, capsMap.get(key));
+                            else
+                                capabilities.setCapability(key, lowerCaseIfBrowserName(key, capsMap.get(key)));
+                        }
+                );
 
         return capabilities;
     }
 
-    private static String lowerCaseIfBrowserName(String key, String value) {
+    private static String lowerCaseIfBrowserName(String key, Object value) {
         // in some cases, CB engine can pass upper-cased browserName value
         // make sure we always send a lower case value back to the web driver
-        if (key == "browserName" && value != null)
-            return value.toLowerCase();
-        return value;
+        if (key == "browserName" && value != null && value instanceof String)
+            return value.toString().toLowerCase();
+        return value.toString();
     }
 
     public static DesiredCapabilities mergeUserAndCloudbeatCapabilities(DesiredCapabilities extraCapabilities) {

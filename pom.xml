@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.cloudbeat</groupId>
     <artifactId>cb-framework-plugin-common</artifactId>
-    <version>0.12.9</version>
+    <version>0.12.10</version>
     <build>
         <plugins>
             <plugin>

@@ -308,8 +308,11 @@ public class WebDriverEventHandler implements WebDriverEventListener {
     }
 
     private void collectLogs(final List<LogMessage> logMessages, final WebDriver webDriver, final String logType) {
-        final LogEntries logEntries = webDriver.manage().logs().get(logType);
-        logEntries.forEach(logEntry -> logMessages.add(toLogMessage(logEntry)));
+        try {
+            final LogEntries logEntries = webDriver.manage().logs().get(logType);
+            logEntries.forEach(logEntry -> logMessages.add(toLogMessage(logEntry)));
+        }
+        catch (Exception e) {}  // ignore any error
     }
 
     private static LogMessage toLogMessage(LogEntry logEntry) {
