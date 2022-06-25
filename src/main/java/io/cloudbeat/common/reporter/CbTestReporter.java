@@ -9,6 +9,8 @@ import org.apache.commons.lang3.SystemUtils;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -177,16 +179,25 @@ public class CbTestReporter {
         endCase(caseFqn, TestStatus.SKIPPED, null);
     }
 
-    public String startStep(final String name) {
-        return startStep(name, null, null);
+    public StepResult startStep(final String name) {
+        return startStep(name, StepType.GENERAL, null, null);
     }
 
-    public String startStep(final String name, final String fqn, final List<String> args) {
+    public StepResult startStep(final String name, final StepType type) {
+        return startStep(name, type, null, null);
+    }
+
+    public StepResult startStep(
+            @Nonnull final String name,
+            @Nonnull final StepType type,
+            @Nullable final String fqn,
+            @Nullable final List<String> args
+    ) {
         if (lastStep != null) {
-            lastStep = lastStep.addNewSubStep(name);
+            lastStep = lastStep.addNewSubStep(name, type);
         }
         else if (lastCase != null) {
-            lastStep = lastCase.addNewStep(name);
+            lastStep = lastCase.addNewStep(name, type);
         }
         else    // we are not suppose to call startStep if not case was started before
             return null;
@@ -194,7 +205,7 @@ public class CbTestReporter {
             lastStep.setFqn(fqn);
         if (args != null)
             lastStep.setArgs(args);
-        return lastStep.getId();
+        return lastStep;
     }
 
     public void endLastStep() {
@@ -270,7 +281,8 @@ public class CbTestReporter {
     }
 
     public void step(final String name, Runnable stepFunc, boolean continueOnError) {
-        final String stepId = startStep(name);
+        final StepResult step = startStep(name);
+        final String stepId = step.getId();
         try {
             stepFunc.run();
             endStep(stepId, null, null);

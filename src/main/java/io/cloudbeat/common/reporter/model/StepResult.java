@@ -2,14 +2,23 @@ package io.cloudbeat.common.reporter.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.cloudbeat.common.reporter.model.extra.IStepExtra;
 import io.cloudbeat.common.reporter.serializer.EpochTimeSerializer;
 import io.cloudbeat.common.reporter.serializer.TestStatusSerializer;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class StepResult {
+    @Nonnull
     String id;
+    @Nonnull
     String name;
+    @Nonnull
+    StepType type;
+    @Nullable
+    String fqn;
     @JsonSerialize(using = EpochTimeSerializer.class)
     long startTime;
     @JsonSerialize(using = EpochTimeSerializer.class)
@@ -17,20 +26,24 @@ public class StepResult {
     long duration;
     @JsonSerialize(using = TestStatusSerializer.class)
     TestStatus status;
-    String fqn;
     List<String> args;
     FailureResult failure;
-
     String screenShot;
+    final Map<String, IStepExtra> extra = new HashMap<>();
     @JsonIgnore
     StepResult parentStep = null;
-    ArrayList<StepResult> steps = new ArrayList<>();
+    final ArrayList<StepResult> steps = new ArrayList<>();
     Map<String, Number> stats = new HashMap<>();
-    ArrayList<LogMessage> logs = new ArrayList<>();
+    final ArrayList<LogMessage> logs = new ArrayList<>();
 
     public StepResult(String name) {
+        this(name, StepType.GENERAL);
+    }
+
+    public StepResult(String name, StepType type) {
         this.id = UUID.randomUUID().toString();
         this.name = name;
+        this.type = type;
         this.startTime = Calendar.getInstance().getTimeInMillis();
     }
 
@@ -59,7 +72,11 @@ public class StepResult {
     }
 
     public StepResult addNewSubStep(final String name) {
-        StepResult newSubStep = new StepResult(name);
+        return addNewSubStep(name, StepType.GENERAL);
+    }
+
+    public StepResult addNewSubStep(final String name, final StepType type) {
+        StepResult newSubStep = new StepResult(name, type);
         newSubStep.parentStep = this;
         steps.add(newSubStep);
         return newSubStep;
@@ -119,4 +136,8 @@ public class StepResult {
     public List<LogMessage> getLogs() { return logs; }
 
     public String getScreenShot() { return screenShot; }
+    public Map<String, IStepExtra> getExtra() { return this.extra; }
+    public IStepExtra getExtra(String name) { return extra.getOrDefault(name, null); }
+    public  void addExtra(String name, IStepExtra extra) { this.extra.put(name, extra); }
+    public  IStepExtra removeExtra(String name) { return this.extra.remove(name); }
 }

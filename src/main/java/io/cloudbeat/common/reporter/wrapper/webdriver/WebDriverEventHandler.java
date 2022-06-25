@@ -3,6 +3,7 @@ package io.cloudbeat.common.reporter.wrapper.webdriver;
 import io.cloudbeat.common.reporter.CbTestReporter;
 import io.cloudbeat.common.reporter.model.FailureResult;
 import io.cloudbeat.common.reporter.model.LogMessage;
+import io.cloudbeat.common.reporter.model.StepResult;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -55,7 +56,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeAlertAccept(final WebDriver webDriver) {
-        lastStepId = reporter.startStep("Accept alert");
+        final StepResult step = reporter.startStep("Accept alert");
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override
@@ -66,7 +68,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeAlertDismiss(final WebDriver webDriver) {
-        lastStepId = reporter.startStep("Dismiss alert");
+        final StepResult step = reporter.startStep("Dismiss alert");
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override
@@ -77,7 +80,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeNavigateTo(final String s, final WebDriver webDriver) {
-        lastStepId = reporter.startStep("Navigate to " + s);
+        final StepResult step = reporter.startStep("Navigate to " + s);
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override
@@ -117,7 +121,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeNavigateBack(final WebDriver webDriver) {
-        lastStepId = reporter.startStep("Navigate back");
+        final StepResult step = reporter.startStep("Navigate back");
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override
@@ -128,7 +133,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeNavigateForward(final WebDriver webDriver) {
-        lastStepId = reporter.startStep("Navigate forward");
+        final StepResult step = reporter.startStep("Navigate forward");
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override
@@ -139,7 +145,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeNavigateRefresh(final WebDriver webDriver) {
-        lastStepId = reporter.startStep("Navigate refresh");
+        final StepResult step = reporter.startStep("Navigate refresh");
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override
@@ -150,8 +157,9 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeFindBy(final By by, final WebElement webElement, final WebDriver webDriver) {
-        final String locatorDispName = this.getLocatorDisplayName(by);
-        lastStepId = reporter.startStep(String.format("Find element %s",  locatorDispName));
+        final String locatorDisplayName = this.getLocatorDisplayName(by);
+        final StepResult step = reporter.startStep(String.format("Find element %s",  locatorDisplayName));
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override
@@ -163,7 +171,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
     @Override
     public void beforeClickOn(final WebElement webElement, final WebDriver webDriver) {
         final String elmName = this.getElementDisplayName(webElement);
-        lastStepId = reporter.startStep(String.format("Click on %s", elmName));
+        final StepResult step = reporter.startStep(String.format("Click on %s", elmName));
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override
@@ -182,7 +191,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
         for (final CharSequence charSequence : charSequences) {
             sb.append(charSequence.toString());
         }
-        lastStepId = reporter.startStep(String.format("Set value \"%s\"", sb.toString()));
+        final StepResult step = reporter.startStep(String.format("Set value \"%s\"", sb.toString()));
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override
@@ -198,7 +208,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeScript(final String s, final WebDriver webDriver) {
-        lastStepId = reporter.startStep("Executing script " + s);
+        final StepResult step = reporter.startStep("Executing script " + s);
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override
@@ -209,7 +220,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeSwitchToWindow(final String s, final WebDriver webDriver) {
-        lastStepId = reporter.startStep("Switch to window " + s);
+        final StepResult step = reporter.startStep("Switch to window " + s);
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override
@@ -250,7 +262,8 @@ public class WebDriverEventHandler implements WebDriverEventListener {
 
     @Override
     public void beforeGetText(final WebElement webElement, final WebDriver webDriver) {
-        lastStepId = reporter.startStep("Getting text of  " + webElement.getText());
+        final StepResult step = reporter.startStep("Getting text of  " + webElement.getText());
+        lastStepId = step != null ? step.getId() : null;
     }
 
     @Override

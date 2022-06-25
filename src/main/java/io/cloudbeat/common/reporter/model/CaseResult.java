@@ -49,8 +49,11 @@ public class CaseResult {
     }
 
     public StepResult addNewStep(String name) {
+        return addNewStep(name, StepType.GENERAL);
+    }
+    public StepResult addNewStep(String name, StepType type) {
         StepResult newStep;
-        steps.add(newStep = new StepResult(name));
+        steps.add(newStep = new StepResult(name, type));
         return newStep;
     }
 
