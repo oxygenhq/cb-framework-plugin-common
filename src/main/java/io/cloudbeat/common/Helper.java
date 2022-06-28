@@ -94,10 +94,15 @@ public class Helper {
     }
 
     public static DesiredCapabilities mergeUserAndCloudbeatCapabilities(DesiredCapabilities extraCapabilities) {
-        CbConfig config = CbTestContext.getInstance().getConfig();
-        final DesiredCapabilities capabilities = config != null && config.getCapabilities() != null ? castMapToDesiredCapabilities(config.getCapabilities()) : new DesiredCapabilities();
+        final DesiredCapabilities capabilities = getCapabilitiesFromConfig();
         if (extraCapabilities != null)
             return capabilities.merge(extraCapabilities);
+        return capabilities;
+    }
+
+    public static DesiredCapabilities getCapabilitiesFromConfig() {
+        CbConfig config = CbTestContext.getInstance().getConfig();
+        final DesiredCapabilities capabilities = config != null && config.getCapabilities() != null ? castMapToDesiredCapabilities(config.getCapabilities()) : new DesiredCapabilities();
         return capabilities;
     }
 
